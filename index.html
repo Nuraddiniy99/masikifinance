@@ -1734,6 +1734,100 @@
         });
     </script>
 
+        <div id="firstRunPopup" class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+        <div class="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#16161d]/80 backdrop-blur-xl shadow-2xl transition-all transform scale-95 opacity-0 duration-300" id="popupCard">
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/20 rounded-full blur-[80px]"></div>
+            <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/20 rounded-full blur-[80px]"></div>
+
+            <div class="relative p-6 md:p-8">
+                <div class="flex justify-center mb-6">
+                    <div class="p-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/20">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="Thread-warning d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold text-white text-center mb-4">Penting: Amankan Data Anda!</h3>
+                <p class="text-gray-400 text-sm leading-relaxed mb-6 text-center">
+                    Aplikasi ini menyimpan data secara lokal di browser/perangkat Anda. <span class="text-red-400 font-semibold">Jangan menghapus cache atau data browser</span> agar catatan keuangan Anda tidak hilang.
+                </p>
+
+                <div class="space-y-3 mb-8">
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Langkah Aman Membersihkan Data:</p>
+                    <div class="space-y-2 text-sm text-gray-300">
+                        <div class="flex items-start gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
+                            <span class="bg-blue-500/20 text-blue-400 w-5 h-5 flex items-center justify-center rounded text-[10px] shrink-0 mt-0.5">1</span>
+                            <span>Buka <b>Pengaturan</b> (Pojok kanan atas)</span>
+                        </div>
+                        <div class="flex items-start gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
+                            <span class="bg-blue-500/20 text-blue-400 w-5 h-5 flex items-center justify-center rounded text-[10px] shrink-0 mt-0.5">2</span>
+                            <span>Pilih <b>Ekspor JSON</b> (Backup data Anda)</span>
+                        </div>
+                        <div class="flex items-start gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
+                            <span class="bg-blue-500/20 text-blue-400 w-5 h-5 flex items-center justify-center rounded text-[10px] shrink-0 mt-0.5">3</span>
+                            <span>Hapus data/cache browser jika diperlukan</span>
+                        </div>
+                        <div class="flex items-start gap-3 bg-white/5 p-2 rounded-lg border border-white/5">
+                            <span class="bg-blue-500/20 text-blue-400 w-5 h-5 flex items-center justify-center rounded text-[10px] shrink-0 mt-0.5">4</span>
+                            <span>Buka app & <b>Impor JSON</b> yang telah didownload</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="closeFirstRunPopup()" class="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-lg shadow-blue-500/20 transition-all active:scale-95">
+                    Saya Mengerti & Siap Mulai
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        /* Tambahan style jika Tailwind tidak mencakup backdrop filter secara penuh */
+        #firstRunPopup {
+            font-family: 'Inter', sans-serif; /* Menyesuaikan font aplikasi */
+        }
+    </style>
+
+    <script>
+        function showFirstRunPopup() {
+            const overlay = document.getElementById('firstRunPopup');
+            const card = document.getElementById('popupCard');
+            
+            overlay.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeFirstRunPopup() {
+            const card = document.getElementById('popupCard');
+            const overlay = document.getElementById('firstRunPopup');
+            
+            card.classList.remove('scale-100', 'opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                // Simpan status di localStorage agar tidak muncul lagi
+                localStorage.setItem('masiki_warning_viewed', 'true');
+            }, 300);
+        }
+
+        // Logika menjalankan popup saat aplikasi dimuat
+        window.addEventListener('load', () => {
+            const hasViewed = localStorage.getItem('masiki_warning_viewed');
+            
+            // Popup muncul jika user belum pernah melihatnya
+            // atau jika Anda ingin mengetesnya, hapus 'masiki_warning_viewed' di tab Application (Inspect Element)
+            if (!hasViewed) {
+                // Beri jeda 1.5 detik setelah aplikasi terbuka agar tidak mengagetkan user
+                setTimeout(showFirstRunPopup, 1500);
+            }
+        });
+    </script>
+
     <script>
         // NEURAL-FINANCE-OS: Mesin Inti dengan Multi-Currency Support
         const NeuralEngine = {
