@@ -2,7 +2,7 @@
   "name": "MASIKI Fin - Sistem Keuangan Pintar",
   "short_name": "MASIKI Fin",
   "description": "Sistem Keuangan Pintar by Rizki Nur Amaludin - Kelola keuangan Anda dengan Pintar dan Mudah",
-  "start_url": "/masikifinance/",
+  "start_url": "/masikifinance/splash.html",
   "display": "standalone",
   "display_override": ["fullscreen", "standalone"],
   "orientation": "portrait",

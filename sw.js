@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   '/masikifinance/splash.html',
   '/masikifinance/manifest.json',
   '/masikifinance/assets/logo-192.png',
-  '/masikifinance/assets/logo-512.png'
+  '/masikifinance/assets/logo-512.png',
+  '/masikifinance/sw.js'
 ];
 
 // Install event - cache static assets

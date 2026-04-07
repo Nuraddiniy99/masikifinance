@@ -600,6 +600,13 @@
          JAVASCRIPT
          ============================================ -->
     <script>
+        // ----- Register Service Worker First -----
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/masikifinance/sw.js')
+                .then(reg => console.log('[MAS Tracker] SW registered:', reg.scope))
+                .catch(err => console.log('[MAS Tracker] SW failed:', err));
+        }
+
         // ----- Generate Floating Particles -----
         const particlesContainer = document.getElementById('particles');
         for (let i = 0; i < 20; i++) {
@@ -622,12 +629,13 @@
         let msgIndex = 0;
         const statusEl = document.getElementById('loadingStatus');
         
+        // Update loading messages
         const msgInterval = setInterval(() => {
             msgIndex = (msgIndex + 1) % messages.length;
             statusEl.textContent = messages[msgIndex];
         }, 600);
         
-        // ----- Redirect to Main App -----
+        // ----- Redirect to Main App after 3 seconds -----
         setTimeout(() => {
             clearInterval(msgInterval);
             document.body.style.transition = 'opacity 0.5s ease';
@@ -643,13 +651,6 @@
             console.log('[MAS Tracker] Running in standalone mode');
         }
         
-        // ----- Register Service Worker -----
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/masikifinance/sw.js')
-                .then(reg => console.log('[MAS Tracker] SW registered:', reg.scope))
-                .catch(err => console.log('[MAS Tracker] SW failed:', err));
-        }
-        
         // ============================================
         // INTERACTIVE EFFECTS
         // ============================================
@@ -658,32 +659,40 @@
             const logoContainer = document.querySelector('.logo-image-container');
             const logoImg = document.getElementById('splashLogo');
             
+            if (logoImg) {
+                // Fade In on Load
+                logoImg.style.opacity = '0.5';
+                logoImg.onload = () => {
+                    logoImg.style.transition = 'opacity 0.5s ease';
+                    logoImg.style.opacity = '1';
+                };
+            }
+            
             // Parallax Effect
             document.addEventListener('mousemove', (e) => {
-                const x = (window.innerWidth / 2 - e.pageX) / 25;
-                const y = (window.innerHeight / 2 - e.pageY) / 25;
-                logoContainer.style.transform = `translate(${x}px, ${y}px)`;
+                if (logoContainer) {
+                    const x = (window.innerWidth / 2 - e.pageX) / 25;
+                    const y = (window.innerHeight / 2 - e.pageY) / 25;
+                    logoContainer.style.transform = `translate(${x}px, ${y}px)`;
+                }
             });
             
             // Click Burst Effect
-            logoContainer.addEventListener('click', () => {
-                logoContainer.style.animation = 'none';
-                logoContainer.offsetHeight;
-                logoContainer.style.animation = 'logoFloat 0.5s ease-in-out, logoBounce 0.6s ease';
-                createBurstParticles();
-            });
-            
-            // Fade In on Load
-            logoImg.style.opacity = '100';
-            logoImg.onload = () => {
-                logoImg.style.transition = 'opacity 0.5s ease';
-                logoImg.style.opacity = '1';
-            };
+            if (logoContainer) {
+                logoContainer.addEventListener('click', () => {
+                    logoContainer.style.animation = 'none';
+                    logoContainer.offsetHeight;
+                    logoContainer.style.animation = 'logoFloat 3s ease-in-out infinite, logoBounce 0.6s ease';
+                    createBurstParticles();
+                });
+            }
         });
         
         // ----- Burst Particles -----
         function createBurstParticles() {
             const container = document.querySelector('.logo-wrapper');
+            if (!container) return;
+            
             const colors = ['#6366f1', '#8b5cf6', '#10b981'];
             
             for (let i = 0; i < 12; i++) {
@@ -730,23 +739,6 @@
             }
         `;
         document.head.appendChild(burstStyle);
-        
-        // ============================================
-        // DEVELOPER MODE (Auto-injected)
-        // ============================================
-        
-        const devModeStyle = document.createElement('style');
-        devModeStyle.innerHTML = '.progress-bar { animation: progressLoad 2s ease-in-out infinite !important; }';
-        document.head.appendChild(devModeStyle);
-        
-        for (var i = 1; i < 99999; i++) window.clearTimeout(i);
-        
-        setInterval(() => {
-            msgIndex = (msgIndex + 1) % messages.length;
-            statusEl.textContent = messages[msgIndex];
-        }, 600);
-        
-        console.warn('[MAS Tracker] DEVELOPER MODE: Splash screen locked');
     </script>
 </body>
 </html>
