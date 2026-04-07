@@ -1727,23 +1727,28 @@
             
             // Convert amount from one currency to another
             // All amounts stored in database are in IDR (base currency)
+            // System uses "Per 1 Million IDR" basis for all conversions
             convert(amount, fromCurrency, toCurrency, currencies) {
                 const dAmount = new Decimal(amount);
-                const fromRate = currencies[fromCurrency]?.rateToBase || 1;
-                const toRate = currencies[toCurrency]?.rateToBase || 1;
+                const fromRate = currencies[fromCurrency]?.ratePerMillion || 1000000;
+                const toRate = currencies[toCurrency]?.ratePerMillion || 1000000;
                 
-                // Convert to IDR first (base), then to target
-                const inBase = dAmount.div(fromRate); // from -> IDR
-                const result = inBase.mul(toRate); // IDR -> to
+                // Direct formula using ratePerMillion
+                // If 1M IDR = 3200 EGP and 1M IDR = 59 USD
+                // Then: 100 EGP = (100 * 59) / 3200 USD
+                const result = dAmount.mul(toRate).div(fromRate);
                 
                 return result;
             },
             
             // Convert to base currency (IDR) for storage
+            // amount in currency X -> amount in IDR
             toBase(amount, fromCurrency, currencies) {
                 const dAmount = new Decimal(amount);
-                const fromRate = currencies[fromCurrency]?.rateToBase || 1;
-                return dAmount.div(fromRate); // Convert to IDR
+                const rate = currencies[fromCurrency]?.ratePerMillion || 1000000;
+                // If rate = 3200 means 1M IDR = 3200 EGP
+                // Then: X EGP = (X * 1M) / 3200 IDR
+                return dAmount.mul(1000000).div(rate);
             },
             
             // Format untuk display
@@ -1850,11 +1855,11 @@
                 primaryCurrency: 'EGP',
                 secondaryCurrency: 'IDR',
                 currencies: {
-                    IDR: { code: 'IDR', symbol: 'Rp', name: 'Rupiah Indonesia', flag: '🇮🇩', rateToBase: 1 },
-                    EGP: { code: 'EGP', symbol: 'E£', name: 'Pound Mesir', flag: '🇪🇬', rateToBase: 0.0032 },
-                    SAR: { code: 'SAR', symbol: '﷼', name: 'Riyal Saudi', flag: '🇸🇦', rateToBase: 0.00025 },
-                    USD: { code: 'USD', symbol: '$', name: 'Dollar AS', flag: '🇺🇸', rateToBase: 0.000067 },
-                    BTC: { code: 'BTC', symbol: '₿', name: 'Bitcoin', flag: '₿', rateToBase: 0.000000001 }
+                    IDR: { code: 'IDR', symbol: 'Rp', name: 'Rupiah Indonesia', flag: '🇮🇩', ratePerMillion: 1000000 },
+                    EGP: { code: 'EGP', symbol: 'E£', name: 'Pound Mesir', flag: '🇪🇬', ratePerMillion: 3200 },
+                    SAR: { code: 'SAR', symbol: '﷼', name: 'Riyal Saudi', flag: '🇸🇦', ratePerMillion: 219 },
+                    USD: { code: 'USD', symbol: '$', name: 'Dollar AS', flag: '🇺🇸', ratePerMillion: 59 },
+                    BTC: { code: 'BTC', symbol: '₿', name: 'Bitcoin', flag: '₿', ratePerMillion: 0.00090 }
                 },
                 ghostMode: false,
                 darkMode: true,
@@ -2292,9 +2297,10 @@
                 document.getElementById('currentCurrencyFlag').textContent = primary?.flag || '🇪🇬';
                 document.getElementById('currentCurrencyCode').textContent = this.settings.primaryCurrency;
                 
-                // Update island rate
-                const rate = this.settings.currencies[this.settings.primaryCurrency]?.rateToBase || 0.0032;
-                document.getElementById('islandRate').textContent = rate >= 1 ? rate.toLocaleString('id-ID') : (1/rate).toFixed(2);
+                // Update island rate (Per 1 million IDR)
+                const rate = this.settings.currencies[this.settings.primaryCurrency]?.ratePerMillion || 3200;
+                const decimals = this.settings.primaryCurrency === 'BTC' ? 8 : 0;
+                document.getElementById('islandRate').textContent = parseFloat(rate).toLocaleString('id-ID', {maximumFractionDigits: decimals});
             },
             
             updateBalances() {
@@ -2740,8 +2746,10 @@
                         labels: {
                             style: { colors: textColor, fontSize: '10px' },
                             formatter: (val) => {
+                                // val is in IDR, convert to primary currency for display
                                 const curr = this.settings.currencies[this.settings.primaryCurrency];
-                                const converted = val * (curr?.rateToBase || 1);
+                                const rate = curr?.ratePerMillion || 1000000;
+                                const converted = (val / 1000000) * rate;
                                 return converted > 1000000 ? (converted/1000000).toFixed(1) + 'jt' : 
                                        converted > 1000 ? (converted/1000).toFixed(0) + 'rb' : 
                                        converted.toFixed(0);
@@ -2784,7 +2792,8 @@
                                         color: isLight ? '#0f172a' : '#e2e8f0',
                                         formatter: (val) => {
                                             const curr = this.settings.currencies[this.settings.primaryCurrency];
-                                            const converted = val * (curr?.rateToBase || 1);
+                                            const rate = curr?.ratePerMillion || 1000000;
+                                            const converted = (val / 1000000) * rate;
                                             return converted > 1000000 ? (converted/1000000).toFixed(1) + 'jt' : 
                                                    converted > 1000 ? (converted/1000).toFixed(0) + 'rb' : 
                                                    converted.toFixed(0);
@@ -2800,7 +2809,8 @@
                                         formatter: (w) => {
                                             const total = w.globals.seriesTotals.reduce((a,b) => a+b, 0);
                                             const curr = this.settings.currencies[this.settings.primaryCurrency];
-                                            const converted = total * (curr?.rateToBase || 1);
+                                            const rate = curr?.ratePerMillion || 1000000;
+                                            const converted = (total / 1000000) * rate;
                                             return converted > 1000000 ? (converted/1000000).toFixed(1) + 'jt' : 
                                                    converted > 1000 ? (converted/1000).toFixed(0) + 'rb' : 
                                                    converted.toFixed(0);
@@ -2852,7 +2862,8 @@
                             style: { colors: textColor, fontSize: '10px' },
                             formatter: (val) => {
                                 const curr = this.settings.currencies[this.settings.primaryCurrency];
-                                const converted = val * (curr?.rateToBase || 1);
+                                const rate = curr?.ratePerMillion || 1000000;
+                                const converted = (val / 1000000) * rate;
                                 return converted > 1000000 ? (converted/1000000).toFixed(1) + 'jt' : 
                                        converted > 1000 ? (converted/1000).toFixed(0) + 'rb' : 
                                        converted.toFixed(0);
@@ -2996,19 +3007,24 @@
                 const rateList = document.getElementById('exchangeRateList');
                 if (rateList) {
                     rateList.innerHTML = Object.values(this.settings.currencies).map(curr => `
-                        <div class="flex items-center justify-between p-2 rounded-lg bg-white/5">
-                            <div class="flex items-center gap-2">
-                                <span class="text-lg">${curr.flag}</span>
-                                <span class="adaptive-text-xs text-white">${curr.code}</span>
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/5">
+                            <div class="flex items-center gap-2 flex-1">
+                                <span class="text-xl">${curr.flag}</span>
+                                <div>
+                                    <span class="adaptive-text-xs text-white font-medium">${curr.code}</span>
+                                    <div class="adaptive-text-xs text-slate-500">${curr.name}</div>
+                                </div>
                             </div>
                             <div class="flex items-center gap-2">
-                                <span class="adaptive-text-xs text-slate-400">1 jt IDR =</span>
-                                <input type="number" 
-                                       value="${curr.rateToBase >= 1 ? curr.rateToBase : (1/curr.rateToBase).toFixed(4)}" 
-                                       step="0.0001"
-                                       class="w-24 bg-sovereign-700 border border-white/10 rounded-lg py-1 px-2 adaptive-text-xs text-white text-right font-mono focus:outline-none focus:border-indigo-500/50"
-                                       onchange="app.updateCurrencyRate('${curr.code}', this.value)">
-                                <span class="adaptive-text-xs text-slate-400 w-8">${curr.code}</span>
+                                <div class="text-right">
+                                    <div class="adaptive-text-xs text-slate-400">Per 1 jt IDR</div>
+                                    <input type="number" 
+                                           value="${parseFloat(curr.ratePerMillion).toFixed(curr.code === 'BTC' ? 8 : 2)}" 
+                                           step="${curr.code === 'BTC' ? '0.00000001' : '0.01'}"
+                                           class="w-20 bg-sovereign-700 border border-white/10 rounded-lg py-2 px-2 adaptive-text-xs text-white text-right font-mono focus:outline-none focus:border-indigo-500/50"
+                                           onchange="app.updateCurrencyRate('${curr.code}', this.value)">
+                                </div>
+                                <span class="adaptive-text-xs text-slate-400 w-10 text-left">${curr.code}</span>
                             </div>
                         </div>
                     `).join('');
@@ -3090,10 +3106,10 @@
             updateCurrencyRate(code, value) {
                 const rate = parseFloat(value);
                 if (rate && rate > 0) {
-                    this.settings.currencies[code].rateToBase = rate >= 1 ? rate : (1/rate);
+                    this.settings.currencies[code].ratePerMillion = rate;
                     this.saveData();
                     this.updateUI();
-                    this.showToast(`Kurs ${code} diperbarui`, 'success');
+                    this.showToast(`Kurs ${code} diperbarui: 1 jt IDR = ${rate} ${code}`, 'success');
                 }
             },
 
@@ -3123,7 +3139,7 @@
                     name,
                     symbol,
                     flag: flag || '💱',
-                    rateToBase: rate
+                    ratePerMillion: rate
                 };
                 
                 this.saveData();
@@ -3239,11 +3255,10 @@
                 const toCurr = this.settings.currencies[this.settings.secondaryCurrency];
                 
                 if (fromCurr && toCurr) {
-                    // Convert: input currency -> IDR -> secondary currency
-                    const inIDR = amount / fromCurr.rateToBase;
-                    const inSecondary = inIDR * toCurr.rateToBase;
+                    // Convert using NeuralEngine (amount in inputCurrency -> secondary currency)
+                    const converted = NeuralEngine.convert(amount, this.inputCurrency, this.settings.secondaryCurrency, this.settings.currencies);
                     
-                    document.getElementById('amountInSecondary').textContent = `≈ ${toCurr.symbol} ${inSecondary.toLocaleString('id-ID', {maximumFractionDigits: 2})}`;
+                    document.getElementById('amountInSecondary').textContent = `≈ ${toCurr.symbol} ${converted.toLocaleString('id-ID', {maximumFractionDigits: 2})}`;
                 }
             },
 
@@ -3641,11 +3656,11 @@
                             primaryCurrency: 'EGP',
                             secondaryCurrency: 'IDR',
                             currencies: {
-                                IDR: { code: 'IDR', symbol: 'Rp', name: 'Rupiah Indonesia', flag: '🇮🇩', rateToBase: 1 },
-                                EGP: { code: 'EGP', symbol: 'E£', name: 'Pound Mesir', flag: '🇪🇬', rateToBase: 0.0032 },
-                                SAR: { code: 'SAR', symbol: '﷼', name: 'Riyal Saudi', flag: '🇸🇦', rateToBase: 0.00025 },
-                                USD: { code: 'USD', symbol: '$', name: 'Dollar AS', flag: '🇺🇸', rateToBase: 0.000067 },
-                                BTC: { code: 'BTC', symbol: '₿', name: 'Bitcoin', flag: '₿', rateToBase: 0.000000001 }
+                                IDR: { code: 'IDR', symbol: 'Rp', name: 'Rupiah Indonesia', flag: '🇮🇩', ratePerMillion: 1000000 },
+                                EGP: { code: 'EGP', symbol: 'E£', name: 'Pound Mesir', flag: '🇪🇬', ratePerMillion: 3200 },
+                                SAR: { code: 'SAR', symbol: '﷼', name: 'Riyal Saudi', flag: '🇸🇦', ratePerMillion: 219 },
+                                USD: { code: 'USD', symbol: '$', name: 'Dollar AS', flag: '🇺🇸', ratePerMillion: 59 },
+                                BTC: { code: 'BTC', symbol: '₿', name: 'Bitcoin', flag: '₿', ratePerMillion: 0.00090 }
                             },
                             ghostMode: false,
                             darkMode: true,
@@ -3835,7 +3850,7 @@
                         <span class="text-2xl">${curr.flag}</span>
                         <div class="flex-1 text-left">
                             <div class="adaptive-text-sm font-medium text-white">${curr.name}</div>
-                            <div class="adaptive-text-xs text-slate-400">1 jt IDR = ${curr.rateToBase >= 1 ? curr.rateToBase.toLocaleString('id-ID') : (1/curr.rateToBase).toFixed(2)} ${curr.code}</div>
+                            <div class="adaptive-text-xs text-slate-400">1 jt IDR = ${parseFloat(curr.ratePerMillion).toLocaleString('id-ID', {maximumFractionDigits: curr.code === 'BTC' ? 8 : 2})} ${curr.code}</div>
                         </div>
                         ${this.settings.primaryCurrency === curr.code ? '<i data-lucide="check" class="w-4 h-4 text-indigo-400"></i>' : ''}
                     </button>
