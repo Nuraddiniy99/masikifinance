@@ -6,8 +6,21 @@
     <meta name="theme-color" content="#0a0a0f">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="description" content="Neural Finance OS - Sistem Keuangan Pintar">
-    <title>MASIKI Fin</title>
+    <meta name="description" content="MASIKI FinTracker - Sistem Keuangan Pintar">
+    <title>MASIKI FinTracker</title>
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nuraddiniy99.github.io/masikifinance/">
+    <meta property="og:title" content="MASIKI FinTracker - Sistem Keuangan Pintar">
+    <meta property="og:description" content="Kelola keuangan pribadi Anda dengan lebih cerdas dan efisien bersama MASIKI FinTracker.">
+    <meta property="og:image" content="https://nuraddiniy99.github.io/masikifinance/assets/ban.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://nuraddiniy99.github.io/masikifinance/">
+    <meta name="twitter:title" content="MASIKI FinTracker - Sistem Keuangan Pintar">
+    <meta name="twitter:description" content="Kelola keuangan pribadi Anda dengan lebih cerdas dan efisien bersama MASIKI FinTracker.">
+    <meta name="twitter:image" content="https://nuraddiniy99.github.io/masikifinance/assets/ban.png">
 
         <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
@@ -1464,7 +1477,7 @@
                         <div class="space-y-2">
                             <div>
                                 <label class="adaptive-text-xs text-slate-400 block mb-1">Nama Aplikasi</label>
-                                <input type="text" id="appNameInput" value="MASIKI Fin" class="w-full bg-sovereign-700 border border-white/10 rounded-lg py-2 px-3 adaptive-text-sm text-white focus:outline-none focus:border-indigo-500/50" onchange="app.updateAppIdentity()">
+                                <input type="text" id="appNameInput" value="MASIKI FinTracker" class="w-full bg-sovereign-700 border border-white/10 rounded-lg py-2 px-3 adaptive-text-sm text-white focus:outline-none focus:border-indigo-500/50" onchange="app.updateAppIdentity()">
                             </div>
                             <div>
                                 <label class="adaptive-text-xs text-slate-400 block mb-1">Deskripsi</label>
@@ -1864,7 +1877,7 @@
                 },
                 ghostMode: false,
                 darkMode: true,
-                appName: 'MASIKI Fin',
+                appName: 'MASIKI FinTracker',
                 appLogo: '',
                 appEmoji: '🧠',
                 appDescription: 'Sistem Keuangan Pintar',
@@ -1935,7 +1948,7 @@
                 lucide.createIcons();
                 
                 if (!localStorage.getItem('neural_initialized')) {
-                    this.showToast('Neural Finance OS Diinisialisasi', 'success');
+                    this.showToast('MASIKI FinTracker Diinisialisasi', 'success');
                     localStorage.setItem('neural_initialized', 'true');
                 }
 
@@ -3542,7 +3555,7 @@
             },
 
             updateAppIdentity() {
-                this.settings.appName = document.getElementById('appNameInput').value || 'MASIKI Fin';
+                this.settings.appName = document.getElementById('appNameInput').value || 'MASIKI FinTracker';
                 this.settings.appDescription = document.getElementById('appDescInput').value || 'Sistem Keuangan Pintar';
                 this.settings.appLogo = document.getElementById('appLogoInput').value;
                 this.settings.appEmoji = document.getElementById('appEmojiInput').value || '🧠';
@@ -3686,7 +3699,7 @@
                             },
                             ghostMode: false,
                             darkMode: true,
-                            appName: 'MASIKI Fin',
+                            appName: 'MASIKI FinTracker',
                             appLogo: '',
                             appEmoji: '🧠',
                             appDescription: 'Sistem Keuangan Pintar',
