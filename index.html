@@ -1751,12 +1751,12 @@
                 return dAmount.mul(1000000).div(rate);
             },
             
-            // Format untuk display
+            // Format untuk display - dengan 3 desimal maksimal (Format Indonesia)
             format(amount, currencyCode, currencies) {
                 const currency = currencies[currencyCode];
                 if (!currency) return `${currencyCode} ${amount}`;
                 const val = Math.abs(parseFloat(amount) || 0);
-                return `${currency.symbol} ${val.toLocaleString('id-ID', {maximumFractionDigits: 2})}`;
+                return `${currency.symbol} ${val.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 3})}`;
             },
             
             // Get both primary and secondary display
@@ -2297,10 +2297,9 @@
                 document.getElementById('currentCurrencyFlag').textContent = primary?.flag || '🇪🇬';
                 document.getElementById('currentCurrencyCode').textContent = this.settings.primaryCurrency;
                 
-                // Update island rate (Per 1 million IDR)
+                // Update island rate (Per 1 million IDR) - Format konsisten: max 3 desimal
                 const rate = this.settings.currencies[this.settings.primaryCurrency]?.ratePerMillion || 3200;
-                const decimals = this.settings.primaryCurrency === 'BTC' ? 8 : 0;
-                document.getElementById('islandRate').textContent = parseFloat(rate).toLocaleString('id-ID', {maximumFractionDigits: decimals});
+                document.getElementById('islandRate').textContent = parseFloat(rate).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 3});
             },
             
             updateBalances() {
@@ -2962,11 +2961,27 @@
             },
 
             // Helpers
+            // Format uang dengan konsistensi Indonesia: 1.000.000,876 (max 3 desimal)
+            formatCurrency(amount, symbol = '', maxDecimals = 3) {
+                const val = Math.abs(parseFloat(amount) || 0);
+                const formatted = val.toLocaleString('id-ID', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: maxDecimals
+                });
+                return symbol ? `${symbol} ${formatted}` : formatted;
+            },
+
             formatMoney(amount, currency) {
                 const val = Math.abs(amount || 0);
-                if (currency === 'IDR') return `Rp ${val.toLocaleString('id-ID')}`;
-                if (currency === 'EGP') return `E£ ${val.toLocaleString('id-ID')}`;
-                return val.toLocaleString('id-ID');
+                const symbols = {
+                    'IDR': 'Rp',
+                    'EGP': 'E£',
+                    'USD': '$',
+                    'SAR': '﷼',
+                    'BTC': '₿'
+                };
+                const symbol = symbols[currency] || currency;
+                return this.formatCurrency(val, symbol, 3);
             },
 
             formatDate(dateStr) {
@@ -3019,8 +3034,8 @@
                                 <div class="text-right">
                                     <div class="adaptive-text-xs text-slate-400">Per 1 jt IDR</div>
                                     <input type="number" 
-                                           value="${parseFloat(curr.ratePerMillion).toFixed(curr.code === 'BTC' ? 8 : 2)}" 
-                                           step="${curr.code === 'BTC' ? '0.00000001' : '0.01'}"
+                                           value="${parseFloat(curr.ratePerMillion).toFixed(3)}" 
+                                           step="0.001"
                                            class="w-20 bg-sovereign-700 border border-white/10 rounded-lg py-2 px-2 adaptive-text-xs text-white text-right font-mono focus:outline-none focus:border-indigo-500/50"
                                            onchange="app.updateCurrencyRate('${curr.code}', this.value)">
                                 </div>
@@ -3258,7 +3273,7 @@
                     // Convert using NeuralEngine (amount in inputCurrency -> secondary currency)
                     const converted = NeuralEngine.convert(amount, this.inputCurrency, this.settings.secondaryCurrency, this.settings.currencies);
                     
-                    document.getElementById('amountInSecondary').textContent = `≈ ${toCurr.symbol} ${converted.toLocaleString('id-ID', {maximumFractionDigits: 2})}`;
+                    document.getElementById('amountInSecondary').textContent = `≈ ${toCurr.symbol} ${converted.toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 3})}`;
                 }
             },
 
@@ -3850,7 +3865,7 @@
                         <span class="text-2xl">${curr.flag}</span>
                         <div class="flex-1 text-left">
                             <div class="adaptive-text-sm font-medium text-white">${curr.name}</div>
-                            <div class="adaptive-text-xs text-slate-400">1 jt IDR = ${parseFloat(curr.ratePerMillion).toLocaleString('id-ID', {maximumFractionDigits: curr.code === 'BTC' ? 8 : 2})} ${curr.code}</div>
+                            <div class="adaptive-text-xs text-slate-400">1 jt IDR = ${parseFloat(curr.ratePerMillion).toLocaleString('id-ID', {minimumFractionDigits: 0, maximumFractionDigits: 3})} ${curr.code}</div>
                         </div>
                         ${this.settings.primaryCurrency === curr.code ? '<i data-lucide="check" class="w-4 h-4 text-indigo-400"></i>' : ''}
                     </button>
