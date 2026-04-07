@@ -824,6 +824,7 @@
                             <button onclick="app.setFilter('all')" class="filter-btn px-3 py-1.5 rounded-lg adaptive-text-xs font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 transition-all" data-filter="all">Semua</button>
                             <button onclick="app.setFilter('income')" class="filter-btn px-3 py-1.5 rounded-lg adaptive-text-xs font-medium bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 transition-all" data-filter="income">Masuk</button>
                             <button onclick="app.setFilter('expense')" class="filter-btn px-3 py-1.5 rounded-lg adaptive-text-xs font-medium bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 transition-all" data-filter="expense">Keluar</button>
+                            <button onclick="app.setFilter('transfer')" class="filter-btn px-3 py-1.5 rounded-lg adaptive-text-xs font-medium bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 transition-all" data-filter="transfer">Transfer</button>
                         </div>
                     </div>
 
@@ -2018,7 +2019,15 @@
             editingBudgetId: null,
             editingCategoryId: null,
             editingWalletId: null,
-            Decimal: Decimal,
+            Decimal: Decimal, // Reference to Decimal class for precision math
+            
+            // Helper untuk precision-safe number conversion
+            safeToNumber(decimalValue) {
+                if (!decimalValue) return 0;
+                // Round to 8 decimal places to avoid floating point artifacts
+                const rounded = decimalValue.toDecimalPlaces(8);
+                return parseFloat(rounded.toString());
+            },
 
             init() {
                 this.loadData();
@@ -2115,44 +2124,78 @@
 
             // Core Operations
             addTransaction(tx) {
-                // Convert amount to base currency (IDR) for storage
-                const amountInBase = NeuralEngine.toBase(tx.amount, tx.currency || this.inputCurrency, this.settings.currencies);
-                
-                tx.id = Date.now().toString(36) + Math.random().toString(36).substr(2);
-                tx.timestamp = new Date().toISOString();
-                tx.amountInBase = this.safeToNumber(amountInBase);
-                tx.originalAmount = parseFloat(tx.amount);
-                tx.originalCurrency = tx.currency || this.inputCurrency;
-                
-                this.data.unshift(tx);
-                
-                // Update wallet balance (in base currency)
+            // Convert amount to base currency (IDR) for storage
+            const amountInBase = NeuralEngine.toBase(tx.amount, tx.currency || this.inputCurrency, this.settings.currencies);
+            
+            tx.id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+            tx.timestamp = new Date().toISOString();
+            tx.amountInBase = this.safeToNumber(amountInBase);
+            tx.originalAmount = parseFloat(tx.amount);
+            tx.originalCurrency = tx.currency || this.inputCurrency;
+            
+            // 🆕 BUG FIX: Validasi saldo untuk pengeluaran
+            if (tx.type === 'expense') {
                 const wallet = this.settings.wallets.find(w => w.id === tx.wallet);
                 if (wallet) {
-                    if (tx.type === 'income') wallet.balance += tx.amountInBase;
-                    else wallet.balance -= tx.amountInBase;
+                    const epsilon = 0.00000001;
+                    if (wallet.balance < tx.amountInBase - epsilon) {
+                        this.showToast(
+                            `Saldo ${wallet.name} tidak mencukupi! ` +
+                            `Tersedia: ${this.formatMoney(wallet.balance, 'IDR')}, ` +
+                            `Dibutuhkan: ${this.formatMoney(tx.amountInBase, 'IDR')}`, 
+                            'error'
+                        );
+                        return false; // Gagal, jangan lanjutkan
+                    }
                 }
-
-                // Check budgets
-                this.checkBudgetAlert(tx);
-
-                this.saveData();
-                this.updateUI();
-                this.showToast('Transaksi tersimpan', 'success');
+            }
+            
+            // Jika ini transfer, tandai dengan isTransfer = true
+            if (tx.isTransfer) {
+                tx.type = 'transfer';
+            }
+            
+            this.data.unshift(tx);
+            
+            // Update wallet balance (in base currency)
+            if (!tx.isTransfer) {
+                const wallet = this.settings.wallets.find(w => w.id === tx.wallet);
+                if (wallet) {
+                    if (tx.type === 'income') {
+                        wallet.balance = this.safeToNumber(new this.Decimal(wallet.balance).plus(amountInBase));
+                    }
+                    else if (tx.type === 'expense') {
+                        wallet.balance = this.safeToNumber(new this.Decimal(wallet.balance).minus(amountInBase));
+                    }
+                }
                 
-                if (navigator.vibrate) navigator.vibrate(50);
-            },
+                // Check budgets hanya untuk expense normal
+                if (tx.type === 'expense') {
+                    this.checkBudgetAlert(tx);
+                }
+            }
+
+            this.saveData();
+            this.updateUI();
+            this.showToast(tx.isTransfer ? 'Transfer tersimpan' : 'Transaksi tersimpan', 'success');
+            
+            if (navigator.vibrate) navigator.vibrate(50);
+            return true;
+        },
 
             updateTransaction(id, updates) {
                 const idx = this.data.findIndex(t => t.id === id);
                 if (idx !== -1) {
                     const oldTx = this.data[idx];
                     
-                    // Revert wallet balance
-                    const wallet = this.settings.wallets.find(w => w.id === oldTx.wallet);
-                    if (wallet) {
-                        if (oldTx.type === 'income') wallet.balance -= oldTx.amountInBase;
-                        else wallet.balance += oldTx.amountInBase;
+                    // Hanya update wallet balance jika BUKAN transfer
+                    if (!oldTx.isTransfer) {
+                        // Revert wallet balance
+                        const wallet = this.settings.wallets.find(w => w.id === oldTx.wallet);
+                        if (wallet) {
+                            if (oldTx.type === 'income') wallet.balance -= oldTx.amountInBase;
+                            else if (oldTx.type === 'expense') wallet.balance += oldTx.amountInBase;
+                        }
                     }
                     
                     // Convert new amount to base
@@ -2166,11 +2209,13 @@
                         originalCurrency: updates.currency || this.inputCurrency
                     };
                     
-                    // Apply new wallet balance
-                    const newWallet = this.settings.wallets.find(w => w.id === updates.wallet);
-                    if (newWallet) {
-                        if (updates.type === 'income') newWallet.balance += this.data[idx].amountInBase;
-                        else newWallet.balance -= this.data[idx].amountInBase;
+                    // Apply new wallet balance hanya untuk non-transfer
+                    if (!this.data[idx].isTransfer) {
+                        const newWallet = this.settings.wallets.find(w => w.id === updates.wallet);
+                        if (newWallet) {
+                            if (updates.type === 'income') newWallet.balance += this.data[idx].amountInBase;
+                            else if (updates.type === 'expense') newWallet.balance -= this.data[idx].amountInBase;
+                        }
                     }
                     
                     this.saveData();
@@ -2180,22 +2225,42 @@
             },
 
             deleteTransaction(id) {
-                if (!confirm('Hapus transaksi ini?')) return;
-                
-                const tx = this.data.find(t => t.id === id);
-                if (tx) {
-                    const wallet = this.settings.wallets.find(w => w.id === tx.wallet);
-                    if (wallet) {
-                        if (tx.type === 'income') wallet.balance -= tx.amountInBase;
-                        else wallet.balance += tx.amountInBase;
+            if (!confirm('Hapus transaksi ini?')) return;
+            
+            const tx = this.data.find(t => t.id === id);
+            if (!tx) return;
+            
+            // 🆕 BUG FIX: Kembalikan balance wallet untuk semua tipe kecuali transfer
+            if (!tx.isTransfer && tx.type !== 'transfer') {
+                const wallet = this.settings.wallets.find(w => w.id === tx.wallet);
+                if (wallet) {
+                    const amountDecimal = new this.Decimal(tx.amountInBase);
+                    if (tx.type === 'income') {
+                        wallet.balance = this.safeToNumber(new this.Decimal(wallet.balance).minus(amountDecimal));
+                    } else if (tx.type === 'expense') {
+                        wallet.balance = this.safeToNumber(new this.Decimal(wallet.balance).plus(amountDecimal));
                     }
                 }
+            }
+            
+            // 🆕 Jika hapus transfer, kembalikan balance ke semua wallet terkait
+            if (tx.isTransfer && tx.transferDetails) {
+                const fromWallet = this.settings.wallets.find(w => w.id === tx.transferDetails.fromWallet);
+                const toWallet = this.settings.wallets.find(w => w.id === tx.transferDetails.toWallet);
                 
-                this.data = this.data.filter(t => t.id !== id);
-                this.saveData();
-                this.updateUI();
-                this.showToast('Transaksi dihapus', 'success');
-            },
+                if (fromWallet && toWallet) {
+                    const amountDecimal = new this.Decimal(tx.amountInBase);
+                    // Reverse transfer: kembalikan ke from, kurangi dari to
+                    fromWallet.balance = this.safeToNumber(new this.Decimal(fromWallet.balance).plus(amountDecimal));
+                    toWallet.balance = this.safeToNumber(new this.Decimal(toWallet.balance).minus(amountDecimal));
+                }
+            }
+            
+            this.data = this.data.filter(t => t.id !== id);
+            this.saveData();
+            this.updateUI();
+            this.showToast('Transaksi dihapus', 'success');
+        },
 
             checkBudgetAlert(tx) {
                 if (tx.type !== 'expense') return;
@@ -2339,14 +2404,13 @@
                 const toId = document.getElementById('transferTo').value;
                 const rawAmount = document.getElementById('transferAmount').value;
                 
-                // Strict input validation - only allow positive numbers
+                // Validasi input
                 const amount = parseFloat(rawAmount);
                 if (isNaN(amount) || !isFinite(amount) || amount <= 0) {
                     this.showToast('Masukkan jumlah positif yang valid', 'error');
                     return;
                 }
                 
-                // Additional security: check for negative zero or very small amounts
                 if (amount < 0.00000001) {
                     this.showToast('Jumlah terlalu kecil', 'error');
                     return;
@@ -2365,48 +2429,53 @@
                     return;
                 }
                 
-                // Convert amount to base currency with precision preservation
+                // Convert ke base currency (IDR)
                 const amountInBaseDecimal = NeuralEngine.toBase(amount, this.settings.primaryCurrency, this.settings.currencies);
                 const amountInBase = this.safeToNumber(amountInBaseDecimal);
 
-                // Use epsilon-aware comparison for floating point safety
+                // ⚠️ VALIDASI SALDO - BUG FIX #2
                 const epsilon = 0.00000001;
                 if (fromWallet.balance < amountInBase - epsilon) {
-                    this.showToast('Saldo dompet sumber tidak mencukupi', 'error');
+                    this.showToast(`Saldo ${fromWallet.name} tidak mencukupi. Tersedia: ${this.formatMoney(fromWallet.balance, 'IDR')}`, 'error');
                     return;
                 }
 
-                // Precision-safe balance updates
+                // Update wallet balances dengan precision-safe
                 fromWallet.balance = this.safeToNumber(new this.Decimal(fromWallet.balance).minus(amountInBaseDecimal));
                 toWallet.balance = this.safeToNumber(new this.Decimal(toWallet.balance).plus(amountInBaseDecimal));
 
-                // Record as transactions
-                this.addTransaction({
-                    type: 'expense',
+                // 🆕 BUG FIX #1: CATAT TRANSFER SEBAGAI TRANSAKSI KHUSUS
+                const transferTx = {
+                    id: 'txf_' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+                    type: 'transfer', // Tipe khusus
+                    isTransfer: true,
                     amount: amount,
                     currency: this.settings.primaryCurrency,
-                    description: `Transfer ke ${toWallet.name}`,
+                    amountInBase: amountInBase,
+                    originalAmount: amount,
+                    originalCurrency: this.settings.primaryCurrency,
+                    description: `Transfer: ${fromWallet.name} → ${toWallet.name}`,
                     date: new Date().toISOString().split('T')[0],
-                    category: 'other',
-                    wallet: fromId
-                });
-
-                this.addTransaction({
-                    type: 'income',
-                    amount: amount,
-                    currency: this.settings.primaryCurrency,
-                    description: `Transfer dari ${fromWallet.name}`,
-                    date: new Date().toISOString().split('T')[0],
-                    category: 'other',
-                    wallet: toId
-                });
+                    category: 'transfer',
+                    wallet: fromId, // Dompet sumber
+                    transferDetails: {
+                        fromWallet: fromId,
+                        toWallet: toId,
+                        fromWalletName: fromWallet.name,
+                        toWalletName: toWallet.name
+                    },
+                    timestamp: new Date().toISOString()
+                };
+                
+                // Simpan ke data transaksi
+                this.data.unshift(transferTx);
 
                 this.saveData();
                 this.updateUI();
                 this.renderWallets();
                 
                 document.getElementById('transferAmount').value = '';
-                this.showToast('Transfer berhasil', 'success');
+                this.showToast(`Transfer ${this.formatMoney(amount, this.settings.primaryCurrency)} berhasil`, 'success');
             },
 
             // UI Updates
@@ -2442,11 +2511,12 @@
             },
             
             updateBalances() {
+                // Hanya hitung transaksi yang bukan transfer (income/expense normal)
                 const income = this.data
-                    .filter(t => t.type === 'income')
+                    .filter(t => t.type === 'income' && !t.isTransfer)
                     .reduce((sum, t) => sum + t.amountInBase, 0);
                 const expense = this.data
-                    .filter(t => t.type === 'expense')
+                    .filter(t => t.type === 'expense' && !t.isTransfer)
                     .reduce((sum, t) => sum + t.amountInBase, 0);
                 const balance = income - expense;
                 const savingsRate = income > 0 ? ((income - expense) / income * 100) : 0;
@@ -2567,7 +2637,8 @@
             renderTransactions() {
                 const list = document.getElementById('transactionsList');
                 const filtered = this.currentFilter === 'all' ? this.data : 
-                    this.data.filter(t => t.type === this.currentFilter);
+                    this.currentFilter === 'transfer' ? this.data.filter(t => t.isTransfer || t.type === 'transfer') :
+                    this.data.filter(t => t.type === this.currentFilter && !t.isTransfer);
                 
                 if (filtered.length === 0) {
                     list.innerHTML = `
@@ -2581,32 +2652,51 @@
                 }
 
                 list.innerHTML = filtered.slice(0, 50).map(t => {
-                    const cat = this.categories[t.type].find(c => c.id === t.category) || { icon: '💵', name: 'Lainnya', color: '#6b7280' };
+                    const cat = this.categories[t.type]?.find(c => c.id === t.category) || { icon: '💵', name: 'Lainnya', color: '#6b7280' };
                     const wallet = this.settings.wallets.find(w => w.id === t.wallet) || { name: 'Tunai' };
                     
-                    // Get dual display for this transaction
+                    // Get dual display untuk transaksi ini
                     const dual = NeuralEngine.getDualDisplay(t.amountInBase, this.settings);
+                    
+                    // 🆕 BUG FIX: Handle transfer display dengan benar
+                    const isTransfer = t.isTransfer || t.type === 'transfer';
+                    const amountClass = isTransfer ? 'text-indigo-400' : (t.type === 'income' ? 'text-emerald-400' : 'text-rose-400');
+                    const sign = isTransfer ? '⇄' : (t.type === 'income' ? '+' : '-');
+                    
+                    // Style berbeda untuk transfer
+                    let bgStyle, displayIcon, displayCategory;
+                    if (isTransfer) {
+                        bgStyle = 'background: rgba(99, 102, 241, 0.2); color: #818cf8;';
+                        displayIcon = '⇄';
+                        displayCategory = t.transferDetails ? 
+                            `${t.transferDetails.fromWalletName} → ${t.transferDetails.toWalletName}` : 
+                            'Transfer';
+                    } else {
+                        bgStyle = `background: ${cat.color}20; color: ${cat.color}`;
+                        displayIcon = cat.icon;
+                        displayCategory = cat.name;
+                    }
                     
                     return `
                         <div class="glass-card rounded-xl p-3 flex items-center gap-3 group hover:bg-white/10 transition-all cursor-pointer transaction-item sensitive-data">
-                            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style="background: ${cat.color}20; color: ${cat.color}">
-                                ${cat.icon}
+                            <div class="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0" style="${bgStyle}">
+                                ${displayIcon}
                             </div>
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2">
                                     <span class="font-medium text-white adaptive-text-sm truncate">${t.description}</span>
+                                    ${isTransfer ? '<span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px]">Transfer</span>' : ''}
                                 </div>
                                 <div class="adaptive-text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
                                     <span>${this.formatDate(t.date)}</span>
                                     <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                    <span class="px-1.5 py-0.5 rounded bg-white/10 text-slate-400">${cat.name}</span>
-                                    <span class="w-1 h-1 rounded-full bg-slate-600"></span>
-                                    <span>${wallet.name}</span>
+                                    <span class="px-1.5 py-0.5 rounded bg-white/10 text-slate-400">${displayCategory}</span>
+                                    ${!isTransfer ? `<span class="w-1 h-1 rounded-full bg-slate-600"></span><span>${wallet.name}</span>` : ''}
                                 </div>
                             </div>
                             <div class="text-right min-w-0">
-                                <div class="font-bold adaptive-text-sm ${t.type === 'income' ? 'text-emerald-400' : 'text-rose-400'} text-ellipsis">
-                                    ${t.type === 'income' ? '+' : '-'} ${dual.primary.formatted}
+                                <div class="font-bold adaptive-text-sm ${amountClass} text-ellipsis">
+                                    ${isTransfer ? '' : sign} ${dual.primary.formatted}
                                 </div>
                                 <div class="currency-secondary font-mono">
                                     ${dual.secondary.formatted}
