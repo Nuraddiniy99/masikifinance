@@ -2018,6 +2018,7 @@
             editingBudgetId: null,
             editingCategoryId: null,
             editingWalletId: null,
+            Decimal: Decimal,
 
             init() {
                 this.loadData();
@@ -2119,7 +2120,7 @@
                 
                 tx.id = Date.now().toString(36) + Math.random().toString(36).substr(2);
                 tx.timestamp = new Date().toISOString();
-                tx.amountInBase = parseFloat(amountInBase.toString()); // Store in IDR
+                tx.amountInBase = this.safeToNumber(amountInBase);
                 tx.originalAmount = parseFloat(tx.amount);
                 tx.originalCurrency = tx.currency || this.inputCurrency;
                 
@@ -2160,7 +2161,7 @@
                     this.data[idx] = { 
                         ...oldTx, 
                         ...updates, 
-                        amountInBase: parseFloat(amountInBase.toString()),
+                        amountInBase: this.safeToNumber(amountInBase),
                         originalAmount: parseFloat(updates.amount),
                         originalCurrency: updates.currency || this.inputCurrency
                     };
