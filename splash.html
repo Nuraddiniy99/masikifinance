@@ -634,7 +634,7 @@
             document.body.style.opacity = '0';
             
             setTimeout(() => {
-                window.location.href = 'index.html';
+                window.location.href = '/masikifinance/index.html';
             }, 500);
         }, 3000);
         
@@ -645,7 +645,7 @@
         
         // ----- Register Service Worker -----
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
+            navigator.serviceWorker.register('/masikifinance/sw.js')
                 .then(reg => console.log('[MAS Tracker] SW registered:', reg.scope))
                 .catch(err => console.log('[MAS Tracker] SW failed:', err));
         }

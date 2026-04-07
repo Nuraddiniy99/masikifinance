@@ -1691,7 +1691,7 @@
         // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                navigator.serviceWorker.register('/masikifinance/sw.js')
                     .then(registration => {
                         console.log('[MAS Tracker] SW registered:', registration.scope);
                         
@@ -3973,10 +3973,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             app.init();
         });
-
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('data:text/javascript,').catch(() => {});
-        }
     </script>
 </body>
 </html>

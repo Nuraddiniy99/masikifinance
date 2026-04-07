@@ -3,12 +3,12 @@
 
 const CACHE_NAME = 'mas-tracker-v1.0.0';
 const STATIC_ASSETS = [
-  '/mas-tracker/',
-  '/mas-tracker/index.html',
-  '/mas-tracker/splash.html',
-  '/mas-tracker/manifest.json',
-  '/mas-tracker/assets/logo-192.png',
-  '/mas-tracker/assets/logo-512.png'
+  '/masikifinance/',
+  '/masikifinance/index.html',
+  '/masikifinance/splash.html',
+  '/masikifinance/manifest.json',
+  '/masikifinance/assets/logo-192.png',
+  '/masikifinance/assets/logo-512.png'
 ];
 
 // Install event - cache static assets
@@ -77,7 +77,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // Return offline fallback if available
           if (event.request.mode === 'navigate') {
-            return caches.match('/mas-tracker/index.html');
+            return caches.match('/masikifinance/index.html');
           }
         });
     })
@@ -95,8 +95,8 @@ self.addEventListener('sync', (event) => {
 self.addEventListener('push', (event) => {
   const options = {
     body: event.data?.text() || 'Pengingat dari MAS Tracker',
-    icon: '/mas-tracker/assets/logo-192.png',
-    badge: '/mas-tracker/assets/logo-192.png',
+    icon: '/masikifinance/assets/logo-192.png',
+    badge: '/masikifinance/assets/logo-192.png',
     tag: 'mas-tracker-notification',
     requireInteraction: true,
     actions: [
@@ -116,7 +116,7 @@ self.addEventListener('notificationclick', (event) => {
   
   if (event.action === 'open' || !event.action) {
     event.waitUntil(
-      clients.openWindow('/mas-tracker/')
+      clients.openWindow('/masikifinance/')
     );
   }
 });
