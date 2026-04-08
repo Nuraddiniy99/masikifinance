@@ -646,12 +646,14 @@
 </head>
 <body class="bg-sovereign-900 text-slate-200 selection:bg-indigo-500 selection:text-white">
 
-        <div id="pull-to-refresh" class="fixed top-0 left-0 w-full z-[9999] pointer-events-none" style="height: 200px; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+        <!-- Pull to Refresh Container - Ditempatkan di awal body -->
+        <div id="pull-to-refresh" class="fixed top-0 left-0 w-full z-[9999] pointer-events-none" 
+            style="height: 180px; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
             <div class="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
                 <!-- Astronaut Helmet SVG -->
-                <div id="astronaut-helmet" class="relative w-24 h-24 transition-transform duration-300" style="transform: translateY(20px);">
+                <div id="astronaut-helmet" class="relative w-20 h-20 sm:w-24 sm:h-24 transition-transform duration-300" 
+                    style="transform: translateY(20px);">
                     <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-2xl">
-                        <!-- Helmet Outer Shell -->
                         <defs>
                             <linearGradient id="helmetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                                 <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
@@ -667,6 +669,11 @@
                                 <stop offset="0%" style="stop-color:#cbd5e1;stop-opacity:1" />
                                 <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
                             </linearGradient>
+                            <radialGradient id="lightGradient" cx="30%" cy="30%" r="70%">
+                                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.9" />
+                                <stop offset="40%" style="stop-color:#8b5cf6;stop-opacity:0.6" />
+                                <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0" />
+                            </radialGradient>
                         </defs>
                         
                         <!-- Helmet Base -->
@@ -683,18 +690,9 @@
                         <ellipse cx="50" cy="50" rx="32" ry="28" fill="url(#visorGradient)" stroke="#334155" stroke-width="2"/>
                         
                         <!-- Visor Reflection/Light Blink -->
-                        <ellipse id="visor-light" cx="35" cy="42" rx="12" ry="8" fill="url(#lightGradient)" opacity="0" style="transition: opacity 0.8s ease-in-out;">
+                        <ellipse id="visor-light" cx="35" cy="42" rx="12" ry="8" fill="url(#lightGradient)" opacity="0">
                             <animate attributeName="opacity" values="0;0.8;0.3;0.9;0;0.5;0" dur="3s" repeatCount="indefinite" />
                         </ellipse>
-                        
-                        <!-- Light Gradient for Reflection -->
-                        <defs>
-                            <radialGradient id="lightGradient" cx="30%" cy="30%" r="70%">
-                                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.9" />
-                                <stop offset="40%" style="stop-color:#8b5cf6;stop-opacity:0.6" />
-                                <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0" />
-                            </radialGradient>
-                        </defs>
                         
                         <!-- Small Details -->
                         <circle cx="75" cy="65" r="3" fill="#475569" opacity="0.6"/>
@@ -709,50 +707,70 @@
                 </div>
                 
                 <!-- Refresh Text -->
-                <span id="refresh-text" class="text-xs font-medium tracking-widest uppercase mt-2 opacity-0 transition-opacity duration-300" style="color: #6366f1; text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);">
+                <span id="refresh-text" class="text-xs font-medium tracking-widest uppercase mt-2 opacity-0 transition-opacity duration-300" 
+                    style="color: #6366f1; text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);">
                     Refresh
                 </span>
             </div>
         </div>
 
         <!-- Loading Overlay untuk Proses Refresh -->
-        <div id="refresh-loading" class="fixed inset-0 z-[10000] hidden items-center justify-center">
+        <div id="refresh-loading" class="fixed inset-0 z-[10000] hidden" style="display: none;">
             <!-- Backdrop Blur & Darken -->
-            <div class="absolute inset-0 bg-black/40 backdrop-blur-xl transition-all duration-500" id="loading-backdrop"></div>
+            <div class="absolute inset-0 bg-black/60 backdrop-blur-xl transition-all duration-500" 
+                id="loading-backdrop" style="opacity: 0;"></div>
             
             <!-- Center Logo Container -->
-            <div class="relative z-10 flex flex-col items-center gap-4 transform scale-0 opacity-0 transition-all duration-500" id="loading-content">
-                <!-- Logo dengan animasi pulse -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center gap-4" id="loading-content"
+                style="transform: scale(0.5); opacity: 0; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);">
+                <!-- Logo dengan animasi -->
                 <div class="relative">
                     <!-- Glow effect -->
                     <div class="absolute inset-0 bg-indigo-500/30 rounded-3xl blur-2xl animate-pulse"></div>
                     
                     <!-- Logo Container Glassmorphic -->
-                    <div class="relative w-32 h-32 rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl flex items-center justify-center overflow-hidden" style="box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.5);">
+                    <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl flex items-center justify-center overflow-hidden" 
+                        style="box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.5);">
                         <!-- Logo Image -->
-                        <img src="assets/logo-splash.png" alt="MASIKI" class="w-24 h-24 object-contain animate-bounce" style="animation-duration: 2s;">
+                        <img src="assets/logo-splash.png" alt="MASIKI" class="w-20 h-20 sm:w-24 sm:h-24 object-contain" 
+                            style="animation: gentle-bounce 2s ease-in-out infinite;">
                         
                         <!-- Shimmer overlay -->
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent shimmer-effect"></div>
                     </div>
                     
                     <!-- Rotating ring -->
-                    <div class="absolute -inset-4 rounded-3xl border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" style="animation-duration: 3s;"></div>
+                    <div class="absolute -inset-3 sm:-inset-4 rounded-3xl border-2 border-indigo-500/30 border-t-indigo-500" 
+                        style="animation: spin 3s linear infinite;"></div>
                 </div>
                 
                 <!-- Loading Text -->
-                <div class="text-center">
-                    <p class="text-white font-semibold tracking-wide animate-pulse">Memperbarui Data...</p>
+                <div class="text-center px-4">
+                    <p class="text-white font-semibold tracking-wide animate-pulse text-sm sm:text-base">Memperbarui Data...</p>
                     <p class="text-slate-400 text-xs mt-1">Sedang menyinkronkan</p>
                 </div>
             </div>
         </div>
 
         <style>
-            /* Tambahkan keyframes untuk shimmer */
+            /* Keyframes untuk animasi */
             @keyframes shimmer {
                 0% { transform: translateX(-100%); }
                 100% { transform: translateX(100%); }
+            }
+            
+            @keyframes gentle-bounce {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-10px); }
+            }
+            
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            
+            .shimmer-effect {
+                animation: shimmer 2s infinite;
             }
             
             /* Light mode adjustments */
@@ -762,11 +780,18 @@
             }
             
             body.light-mode #loading-backdrop {
-                background: rgba(255, 255, 255, 0.6);
+                background: rgba(255, 255, 255, 0.7) !important;
             }
             
-            body.light-mode .text-slate-400 {
-                color: #64748b;
+            /* Disable pull-to-refresh default browser behavior */
+            html, body {
+                overscroll-behavior-y: none;
+                touch-action: pan-y;
+            }
+            
+            /* Ensure smooth scrolling but prevent bounce */
+            #app {
+                overscroll-behavior-y: contain;
             }
         </style>
 
@@ -4373,145 +4398,242 @@
             app.init();
         });
 
+    (function() {
+        'use strict';
+        
         let startY = 0;
+        let currentY = 0;
         let isPulling = false;
+        let isRefreshing = false;
         let pullDistance = 0;
+        let rafId = null;
+        
         const pullElement = document.getElementById('pull-to-refresh');
         const helmet = document.getElementById('astronaut-helmet');
         const refreshText = document.getElementById('refresh-text');
         const loadingOverlay = document.getElementById('refresh-loading');
         const loadingBackdrop = document.getElementById('loading-backdrop');
         const loadingContent = document.getElementById('loading-content');
-        const threshold = 120; // Jarak minimal untuk trigger refresh
-
-        window.addEventListener('touchstart', (e) => {
-            // Hanya aktif jika user berada di paling atas halaman
-            if (window.scrollY === 0 && !loadingOverlay.classList.contains('flex')) {
-                startY = e.touches[0].pageY;
-                isPulling = true;
-                pullElement.style.transition = 'none';
-            }
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!isPulling) return;
-
-            const currentY = e.touches[0].pageY;
-            pullDistance = currentY - startY;
-
-            if (pullDistance > 0 && pullDistance < 250) {
-                // Tampilkan elemen refresh dengan efek mengintip
-                const translateY = Math.min(pullDistance * 0.5 - 100, -20);
-                const helmetPeek = Math.min(pullDistance * 0.3, 40);
-                const opacity = Math.min(pullDistance / 80, 1);
-                
-                pullElement.style.transform = `translateY(${translateY}px)`;
-                helmet.style.transform = `translateY(${20 - helmetPeek}px) rotate(${pullDistance * 0.1}deg)`;
-                refreshText.style.opacity = pullDistance > threshold ? '1' : '0';
-                
-                // Efek pantulan cahaya berkedip saat ditarik cukup jauh
-                const visorLight = document.getElementById('visor-light');
-                if (visorLight) {
-                    if (pullDistance > 60) {
-                        visorLight.style.opacity = '0.6';
-                    } else {
-                        visorLight.style.opacity = '0';
-                    }
-                }
-            }
-        }, { passive: true });
-
-        window.addEventListener('touchend', (e) => {
-            if (!isPulling) return;
+        const visorLight = document.getElementById('visor-light');
+        
+        const THRESHOLD = 100; // Jarak minimal untuk trigger refresh
+        const MAX_PULL = 200; // Jarak maksimal pull
+        
+        // Check if at top of page
+        function isAtTop() {
+            return window.pageYOffset <= 0 || document.documentElement.scrollTop <= 0;
+        }
+        
+        // Update visual elements
+        function updateVisuals(distance) {
+            // Clamp distance
+            const clamped = Math.min(Math.max(distance, 0), MAX_PULL);
+            const progress = clamped / THRESHOLD;
             
-            isPulling = false;
-            pullElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            // Calculate transforms
+            const translateY = (clamped * 0.6) - 100;
+            const helmetPeek = Math.min(clamped * 0.35, 50);
+            const rotation = clamped * 0.08;
             
-            if (pullDistance >= threshold) {
-                // Trigger refresh
-                triggerRefresh();
+            // Apply transforms
+            pullElement.style.transform = `translate3d(0, ${translateY}px, 0)`;
+            helmet.style.transform = `translate3d(0, ${20 - helmetPeek}px, 0) rotate(${rotation}deg)`;
+            
+            // Text opacity based on threshold
+            if (clamped >= THRESHOLD) {
+                refreshText.style.opacity = '1';
+                refreshText.textContent = 'Refresh';
             } else {
-                // Kembalikan ke posisi semula
-                pullElement.style.transform = 'translateY(-100%)';
-                helmet.style.transform = 'translateY(20px)';
-                refreshText.style.opacity = '0';
+                refreshText.style.opacity = Math.max(0, (clamped - 40) / 40).toString();
+                refreshText.textContent = 'Tarik untuk Refresh';
             }
             
-            pullDistance = 0;
-        }, { passive: true });
-
-        function triggerRefresh() {
-            // Sembunyikan astronaut dengan animasi cepat
-            pullElement.style.transform = 'translateY(-100%)';
+            // Visor light effect
+            if (visorLight) {
+                const lightOpacity = clamped > 50 ? Math.min((clamped - 50) / 50, 0.8) : 0;
+                visorLight.style.opacity = lightOpacity.toString();
+            }
+        }
+        
+        // Reset visuals
+        function resetVisuals() {
+            pullElement.style.transform = 'translate3d(0, -100%, 0)';
+            helmet.style.transform = 'translate3d(0, 20px, 0) rotate(0deg)';
             refreshText.style.opacity = '0';
+            if (visorLight) visorLight.style.opacity = '0';
+        }
+        
+        // Trigger refresh
+        function triggerRefresh() {
+            if (isRefreshing) return;
+            isRefreshing = true;
             
-            // Tampilkan loading overlay
+            // Hide pull element
+            resetVisuals();
+            
+            // Show loading overlay
+            loadingOverlay.style.display = 'flex';
             loadingOverlay.classList.remove('hidden');
-            loadingOverlay.classList.add('flex');
             
-            // Animasi masuk
-            setTimeout(() => {
+            // Force reflow
+            void loadingOverlay.offsetHeight;
+            
+            // Animate in
+            requestAnimationFrame(() => {
                 loadingBackdrop.style.opacity = '1';
                 loadingContent.style.transform = 'scale(1)';
                 loadingContent.style.opacity = '1';
-            }, 50);
+            });
             
-            // Proses refresh
+            // Refresh after delay
             setTimeout(() => {
-                location.reload();
-            }, 1500);
+                window.location.reload();
+            }, 1800);
         }
-
-        // Fallback untuk mouse (desktop testing)
-        let mouseIsDown = false;
-        window.addEventListener('mousedown', (e) => {
-            if (window.scrollY === 0 && e.clientY < 100 && !loadingOverlay.classList.contains('flex')) {
-                mouseIsDown = true;
-                startY = e.clientY;
-                isPulling = true;
-                pullElement.style.transition = 'none';
-            }
-        });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!mouseIsDown || !isPulling) return;
+        
+        // Touch Start Handler
+        function onTouchStart(e) {
+            if (isRefreshing) return;
             
-            const currentY = e.clientY;
+            // Check if at top
+            if (!isAtTop()) return;
+            
+            const touch = e.touches[0];
+            startY = touch.clientY;
+            currentY = startY;
+            isPulling = true;
+            pullDistance = 0;
+            
+            // Disable transition during pull
+            pullElement.style.transition = 'none';
+            helmet.style.transition = 'none';
+        }
+        
+        // Touch Move Handler
+        function onTouchMove(e) {
+            if (!isPulling || isRefreshing) return;
+            
+            const touch = e.touches[0];
+            currentY = touch.clientY;
             pullDistance = currentY - startY;
-
-            if (pullDistance > 0 && pullDistance < 250) {
-                const translateY = Math.min(pullDistance * 0.5 - 100, -20);
-                const helmetPeek = Math.min(pullDistance * 0.3, 40);
-                
-                pullElement.style.transform = `translateY(${translateY}px)`;
-                helmet.style.transform = `translateY(${20 - helmetPeek}px) rotate(${pullDistance * 0.1}deg)`;
-                refreshText.style.opacity = pullDistance > threshold ? '1' : '0';
-                
-                const visorLight = document.getElementById('visor-light');
-                if (visorLight) {
-                    visorLight.style.opacity = pullDistance > 60 ? '0.6' : '0';
-                }
+            
+            // Only handle downward pull
+            if (pullDistance < 0) {
+                pullDistance = 0;
+                return;
             }
-        });
-
-        window.addEventListener('mouseup', (e) => {
-            if (!mouseIsDown) return;
-            mouseIsDown = false;
             
+            // Prevent default only when pulling down at top
+            if (pullDistance > 5 && isAtTop()) {
+                e.preventDefault();
+            }
+            
+            // Update visuals with RAF
+            if (!rafId) {
+                rafId = requestAnimationFrame(() => {
+                    updateVisuals(pullDistance);
+                    rafId = null;
+                });
+            }
+        }
+        
+        // Touch End Handler
+        function onTouchEnd(e) {
             if (!isPulling) return;
-            isPulling = false;
-            pullElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
             
-            if (pullDistance >= threshold) {
+            isPulling = false;
+            
+            // Re-enable transitions
+            pullElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            helmet.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            if (rafId) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+            
+            // Check threshold
+            if (pullDistance >= THRESHOLD) {
                 triggerRefresh();
             } else {
-                pullElement.style.transform = 'translateY(-100%)';
-                helmet.style.transform = 'translateY(20px)';
-                refreshText.style.opacity = '0';
+                // Spring back
+                resetVisuals();
             }
             
             pullDistance = 0;
-        });
+        }
+        
+        // Touch Cancel Handler
+        function onTouchCancel(e) {
+            if (!isPulling) return;
+            
+            isPulling = false;
+            pullElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            helmet.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            resetVisuals();
+            pullDistance = 0;
+        }
+        
+        // Mouse fallback for desktop testing
+        let mouseDown = false;
+        
+        function onMouseDown(e) {
+            if (e.button !== 0) return; // Only left click
+            if (!isAtTop()) return;
+            if (e.clientY > 100) return; // Only top area
+            
+            mouseDown = true;
+            startY = e.clientY;
+            currentY = startY;
+            isPulling = true;
+            pullDistance = 0;
+            
+            pullElement.style.transition = 'none';
+            helmet.style.transition = 'none';
+        }
+        
+        function onMouseMove(e) {
+            if (!mouseDown || !isPulling || isRefreshing) return;
+            
+            currentY = e.clientY;
+            pullDistance = currentY - startY;
+            
+            if (pullDistance < 0) pullDistance = 0;
+            
+            if (!rafId) {
+                rafId = requestAnimationFrame(() => {
+                    updateVisuals(pullDistance);
+                    rafId = null;
+                });
+            }
+        }
+        
+        function onMouseUp(e) {
+            if (!mouseDown) return;
+            mouseDown = false;
+            onTouchEnd(e);
+        }
+        
+        // Register events - Use capture phase for better mobile support
+        const opts = { passive: false, capture: true };
+        
+        // Touch events
+        document.addEventListener('touchstart', onTouchStart, { passive: true, capture: false });
+        document.addEventListener('touchmove', onTouchMove, opts);
+        document.addEventListener('touchend', onTouchEnd, { passive: true, capture: false });
+        document.addEventListener('touchcancel', onTouchCancel, { passive: true, capture: false });
+        
+        // Mouse events (desktop fallback)
+        document.addEventListener('mousedown', onMouseDown, { passive: true });
+        document.addEventListener('mousemove', onMouseMove, { passive: true });
+        document.addEventListener('mouseup', onMouseUp, { passive: true });
+        
+        // Prevent default pull-to-refresh on mobile browsers
+        document.body.style.overscrollBehaviorY = 'none';
+        document.documentElement.style.overscrollBehaviorY = 'none';
+        
+        console.log('[PullToRefresh] Initialized - Mobile Optimized');
+    })();
     </script>
 
     <script src="desktop-adaptive.js"></script>
