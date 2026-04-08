@@ -146,6 +146,7 @@
             background: #0a0a0f;
             color: #e2e8f0;
             overflow-x: hidden;
+            overscroll-behavior-y: contain;
         }
 
         /* Mode Terang - Kontras Tinggi WCAG AA 4.5:1 */
@@ -644,6 +645,130 @@
 <base target="_blank">
 </head>
 <body class="bg-sovereign-900 text-slate-200 selection:bg-indigo-500 selection:text-white">
+
+        <div id="pull-to-refresh" class="fixed top-0 left-0 w-full z-[9999] pointer-events-none" style="height: 200px; transform: translateY(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+            <div class="absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <!-- Astronaut Helmet SVG -->
+                <div id="astronaut-helmet" class="relative w-24 h-24 transition-transform duration-300" style="transform: translateY(20px);">
+                    <svg viewBox="0 0 100 100" class="w-full h-full drop-shadow-2xl">
+                        <!-- Helmet Outer Shell -->
+                        <defs>
+                            <linearGradient id="helmetGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#e2e8f0;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#94a3b8;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#64748b;stop-opacity:1" />
+                            </linearGradient>
+                            <radialGradient id="visorGradient" cx="50%" cy="40%" r="50%">
+                                <stop offset="0%" style="stop-color:#1e293b;stop-opacity:0.95" />
+                                <stop offset="60%" style="stop-color:#0f172a;stop-opacity:0.98" />
+                                <stop offset="100%" style="stop-color:#020617;stop-opacity:1" />
+                            </radialGradient>
+                            <linearGradient id="rimGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cbd5e1;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        
+                        <!-- Helmet Base -->
+                        <ellipse cx="50" cy="55" rx="42" ry="38" fill="url(#helmetGradient)" />
+                        
+                        <!-- Side Details -->
+                        <path d="M12 55 Q8 45 15 35" stroke="#475569" stroke-width="2" fill="none" opacity="0.5"/>
+                        <path d="M88 55 Q92 45 85 35" stroke="#475569" stroke-width="2" fill="none" opacity="0.5"/>
+                        
+                        <!-- Bottom Rim -->
+                        <ellipse cx="50" cy="78" rx="35" ry="8" fill="url(#rimGradient)" />
+                        
+                        <!-- Visor/Glass -->
+                        <ellipse cx="50" cy="50" rx="32" ry="28" fill="url(#visorGradient)" stroke="#334155" stroke-width="2"/>
+                        
+                        <!-- Visor Reflection/Light Blink -->
+                        <ellipse id="visor-light" cx="35" cy="42" rx="12" ry="8" fill="url(#lightGradient)" opacity="0" style="transition: opacity 0.8s ease-in-out;">
+                            <animate attributeName="opacity" values="0;0.8;0.3;0.9;0;0.5;0" dur="3s" repeatCount="indefinite" />
+                        </ellipse>
+                        
+                        <!-- Light Gradient for Reflection -->
+                        <defs>
+                            <radialGradient id="lightGradient" cx="30%" cy="30%" r="70%">
+                                <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.9" />
+                                <stop offset="40%" style="stop-color:#8b5cf6;stop-opacity:0.6" />
+                                <stop offset="100%" style="stop-color:#6366f1;stop-opacity:0" />
+                            </radialGradient>
+                        </defs>
+                        
+                        <!-- Small Details -->
+                        <circle cx="75" cy="65" r="3" fill="#475569" opacity="0.6"/>
+                        <circle cx="78" cy="62" r="1.5" fill="#64748b" opacity="0.8"/>
+                        
+                        <!-- Top Antenna -->
+                        <line x1="50" y1="17" x2="50" y2="8" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+                        <circle cx="50" cy="6" r="3" fill="#6366f1" opacity="0.8">
+                            <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/>
+                        </circle>
+                    </svg>
+                </div>
+                
+                <!-- Refresh Text -->
+                <span id="refresh-text" class="text-xs font-medium tracking-widest uppercase mt-2 opacity-0 transition-opacity duration-300" style="color: #6366f1; text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);">
+                    Refresh
+                </span>
+            </div>
+        </div>
+
+        <!-- Loading Overlay untuk Proses Refresh -->
+        <div id="refresh-loading" class="fixed inset-0 z-[10000] hidden items-center justify-center">
+            <!-- Backdrop Blur & Darken -->
+            <div class="absolute inset-0 bg-black/40 backdrop-blur-xl transition-all duration-500" id="loading-backdrop"></div>
+            
+            <!-- Center Logo Container -->
+            <div class="relative z-10 flex flex-col items-center gap-4 transform scale-0 opacity-0 transition-all duration-500" id="loading-content">
+                <!-- Logo dengan animasi pulse -->
+                <div class="relative">
+                    <!-- Glow effect -->
+                    <div class="absolute inset-0 bg-indigo-500/30 rounded-3xl blur-2xl animate-pulse"></div>
+                    
+                    <!-- Logo Container Glassmorphic -->
+                    <div class="relative w-32 h-32 rounded-3xl bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl flex items-center justify-center overflow-hidden" style="box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.5);">
+                        <!-- Logo Image -->
+                        <img src="assets/logo-splash.png" alt="MASIKI" class="w-24 h-24 object-contain animate-bounce" style="animation-duration: 2s;">
+                        
+                        <!-- Shimmer overlay -->
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
+                    
+                    <!-- Rotating ring -->
+                    <div class="absolute -inset-4 rounded-3xl border-2 border-indigo-500/30 border-t-indigo-500 animate-spin" style="animation-duration: 3s;"></div>
+                </div>
+                
+                <!-- Loading Text -->
+                <div class="text-center">
+                    <p class="text-white font-semibold tracking-wide animate-pulse">Memperbarui Data...</p>
+                    <p class="text-slate-400 text-xs mt-1">Sedang menyinkronkan</p>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Tambahkan keyframes untuk shimmer */
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
+            }
+            
+            /* Light mode adjustments */
+            body.light-mode #refresh-text {
+                color: #4338ca;
+                text-shadow: 0 0 10px rgba(67, 56, 202, 0.3);
+            }
+            
+            body.light-mode #loading-backdrop {
+                background: rgba(255, 255, 255, 0.6);
+            }
+            
+            body.light-mode .text-slate-400 {
+                color: #64748b;
+            }
+        </style>
 
     <!-- Background Layers -->
     <div class="neural-mesh"></div>
@@ -4246,6 +4371,146 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             app.init();
+        });
+
+        let startY = 0;
+        let isPulling = false;
+        let pullDistance = 0;
+        const pullElement = document.getElementById('pull-to-refresh');
+        const helmet = document.getElementById('astronaut-helmet');
+        const refreshText = document.getElementById('refresh-text');
+        const loadingOverlay = document.getElementById('refresh-loading');
+        const loadingBackdrop = document.getElementById('loading-backdrop');
+        const loadingContent = document.getElementById('loading-content');
+        const threshold = 120; // Jarak minimal untuk trigger refresh
+
+        window.addEventListener('touchstart', (e) => {
+            // Hanya aktif jika user berada di paling atas halaman
+            if (window.scrollY === 0 && !loadingOverlay.classList.contains('flex')) {
+                startY = e.touches[0].pageY;
+                isPulling = true;
+                pullElement.style.transition = 'none';
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isPulling) return;
+
+            const currentY = e.touches[0].pageY;
+            pullDistance = currentY - startY;
+
+            if (pullDistance > 0 && pullDistance < 250) {
+                // Tampilkan elemen refresh dengan efek mengintip
+                const translateY = Math.min(pullDistance * 0.5 - 100, -20);
+                const helmetPeek = Math.min(pullDistance * 0.3, 40);
+                const opacity = Math.min(pullDistance / 80, 1);
+                
+                pullElement.style.transform = `translateY(${translateY}px)`;
+                helmet.style.transform = `translateY(${20 - helmetPeek}px) rotate(${pullDistance * 0.1}deg)`;
+                refreshText.style.opacity = pullDistance > threshold ? '1' : '0';
+                
+                // Efek pantulan cahaya berkedip saat ditarik cukup jauh
+                const visorLight = document.getElementById('visor-light');
+                if (visorLight) {
+                    if (pullDistance > 60) {
+                        visorLight.style.opacity = '0.6';
+                    } else {
+                        visorLight.style.opacity = '0';
+                    }
+                }
+            }
+        }, { passive: true });
+
+        window.addEventListener('touchend', (e) => {
+            if (!isPulling) return;
+            
+            isPulling = false;
+            pullElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            if (pullDistance >= threshold) {
+                // Trigger refresh
+                triggerRefresh();
+            } else {
+                // Kembalikan ke posisi semula
+                pullElement.style.transform = 'translateY(-100%)';
+                helmet.style.transform = 'translateY(20px)';
+                refreshText.style.opacity = '0';
+            }
+            
+            pullDistance = 0;
+        }, { passive: true });
+
+        function triggerRefresh() {
+            // Sembunyikan astronaut dengan animasi cepat
+            pullElement.style.transform = 'translateY(-100%)';
+            refreshText.style.opacity = '0';
+            
+            // Tampilkan loading overlay
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+            
+            // Animasi masuk
+            setTimeout(() => {
+                loadingBackdrop.style.opacity = '1';
+                loadingContent.style.transform = 'scale(1)';
+                loadingContent.style.opacity = '1';
+            }, 50);
+            
+            // Proses refresh
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+
+        // Fallback untuk mouse (desktop testing)
+        let mouseIsDown = false;
+        window.addEventListener('mousedown', (e) => {
+            if (window.scrollY === 0 && e.clientY < 100 && !loadingOverlay.classList.contains('flex')) {
+                mouseIsDown = true;
+                startY = e.clientY;
+                isPulling = true;
+                pullElement.style.transition = 'none';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!mouseIsDown || !isPulling) return;
+            
+            const currentY = e.clientY;
+            pullDistance = currentY - startY;
+
+            if (pullDistance > 0 && pullDistance < 250) {
+                const translateY = Math.min(pullDistance * 0.5 - 100, -20);
+                const helmetPeek = Math.min(pullDistance * 0.3, 40);
+                
+                pullElement.style.transform = `translateY(${translateY}px)`;
+                helmet.style.transform = `translateY(${20 - helmetPeek}px) rotate(${pullDistance * 0.1}deg)`;
+                refreshText.style.opacity = pullDistance > threshold ? '1' : '0';
+                
+                const visorLight = document.getElementById('visor-light');
+                if (visorLight) {
+                    visorLight.style.opacity = pullDistance > 60 ? '0.6' : '0';
+                }
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!mouseIsDown) return;
+            mouseIsDown = false;
+            
+            if (!isPulling) return;
+            isPulling = false;
+            pullElement.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            if (pullDistance >= threshold) {
+                triggerRefresh();
+            } else {
+                pullElement.style.transform = 'translateY(-100%)';
+                helmet.style.transform = 'translateY(20px)';
+                refreshText.style.opacity = '0';
+            }
+            
+            pullDistance = 0;
         });
     </script>
 
