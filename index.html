@@ -445,11 +445,20 @@
         }
 
         /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
+        /* Menghilangkan scrollbar secara global namun fungsi scroll tetap aktif */
+        html, body, * {
+            /* 1. Untuk Firefox */
+            scrollbar-width: none;
+            
+            /* 2. Untuk Internet Explorer dan Edge lama */
+            -ms-overflow-style: none;
+        }
+
+        /* 3. Untuk Chrome, Safari, Opera, dan Mobile Browsers (WebKit) */
+        *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
         }
 
         /* Micro-interactions */
@@ -495,11 +504,10 @@
 
         /* Custom Scrollbar for modals */
         .custom-scroll::-webkit-scrollbar {
-            width: 4px;
+            width: none;
         }
         .custom-scroll::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
-            border-radius: 2px;
+            width: none;
         }
 
         /* Input styling */
