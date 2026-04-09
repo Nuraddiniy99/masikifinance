@@ -916,123 +916,37 @@
                 </section>
 
                 <!-- Prediksi AI -->
-                <!-- Prediksi AI - Enhanced -->
-                <section class="glass-panel rounded-2xl p-5 overflow-hidden">
-                    <!-- Header dengan tooltip -->
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-2">
-                            <div class="relative group">
-                                <i data-lucide="sparkles" class="w-5 h-5 text-purple-400"></i>
-                                <div class="absolute bottom-full left-0 mb-2 px-3 py-2 bg-sovereign-700 rounded-xl text-[10px] text-slate-300 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10 z-10">
-                                    Prediksi berdasarkan pola pengeluaran bulan ini
-                                </div>
-                            </div>
-                            <h3 class="font-semibold text-white adaptive-text-base">Prediksi Cerdas</h3>
+                <section class="glass-panel rounded-2xl p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h3 class="font-semibold text-white adaptive-text-sm flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+                                Prediksi Cerdas
+                            </h3>
+                            <p class="adaptive-text-xs text-slate-500 mt-0.5">Proyeksi akhir bulan</p>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <span class="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 text-[10px] font-medium text-purple-300 flex items-center gap-1">
-                                <span class="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse"></span>
-                                AI
-                            </span>
-                            <div class="relative group cursor-help">
-                                <i data-lucide="info" class="w-4 h-4 text-slate-500"></i>
-                                <div class="absolute bottom-full right-0 mb-2 px-3 py-2 bg-sovereign-700 rounded-xl text-[10px] text-slate-300 w-56 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none border border-white/10 z-10">
-                                    Proyeksi dihitung dari rata-rata pengeluaran harian bulan ini × sisa hari
-                                </div>
-                            </div>
+                        <div class="px-2 py-1 rounded-full bg-purple-500/20 border border-purple-500/30 adaptive-text-xs text-purple-300 font-mono">
+                            AI Powered
                         </div>
                     </div>
-                
-                    <!-- Ringkasan Singkat -->
-                    <div class="mb-4 p-3 rounded-xl bg-gradient-to-r from-purple-500/5 to-indigo-500/5 border border-purple-500/10">
-                        <p class="text-[11px] text-slate-400 leading-relaxed" id="forecastSummary">
-                            Berdasarkan pengeluaran <span class="text-white font-medium" id="avgDailyDisplay">Rp 0</span>/hari, 
-                            sisa <span class="text-white font-medium" id="daysLeftDisplay">0</span> hari diproyeksikan.
-                        </p>
-                    </div>
-                
-                    <!-- Kartu Proyeksi Utama -->
-                    <div class="bg-gradient-to-br from-sovereign-700/50 to-sovereign-800/50 rounded-2xl p-4 border border-white/5 mb-3">
-                        <div class="text-[10px] uppercase tracking-wider text-slate-500 mb-2 flex items-center gap-1">
-                            <i data-lucide="calendar" class="w-3 h-3"></i>
-                            Saldo Akhir Bulan Diproyeksikan
+                    
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="text-center p-3 rounded-xl bg-white/5 border border-white/5">
+                            <div class="adaptive-text-xs text-slate-400 mb-1">Diproyeksikan</div>
+                            <div id="forecastBalance" class="adaptive-text-base font-bold text-white sensitive-data text-ellipsis">E£ 0</div>
+                            <div id="forecastBalanceSecondary" class="currency-secondary">Rp 0</div>
                         </div>
-                        
-                        <!-- Nominal Utama - dengan word-break -->
-                        <div class="sensitive-data transition-all duration-300">
-                            <div id="forecastBalance" class="text-2xl sm:text-3xl font-bold text-white tracking-tight break-all leading-tight">E£ 0</div>
-                            <div id="forecastBalanceSecondary" class="text-xs text-slate-500 font-mono mt-1 break-all">Rp 0</div>
+                        <div class="text-center p-3 rounded-xl bg-white/5 border border-white/5">
+                            <div class="adaptive-text-xs text-slate-400 mb-1">Tren</div>
+                            <div id="forecastTrend" class="adaptive-text-base font-bold text-slate-400 flex items-center justify-center gap-1">
+                                <span>-</span>
+                            </div>
                         </div>
-                        
-                        <!-- Indikator visual -->
-                        <div class="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
-                            <div class="flex items-center gap-1.5">
-                                <div id="trendIndicator" class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                                    <i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>
-                                </div>
-                                <div>
-                                    <div class="text-[10px] text-slate-500">Tren</div>
-                                    <div id="forecastTrendText" class="text-sm font-medium text-emerald-400">Positif</div>
-                                </div>
-                            </div>
-                            <div class="w-px h-8 bg-white/10"></div>
-                            <div class="flex-1">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="text-[10px] text-slate-500">Tingkat Risiko</span>
-                                    <span id="riskLevelBadge" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-400">RENDAH</span>
-                                </div>
-                                <!-- Progress bar risiko -->
-                                <div class="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                    <div id="riskProgressBar" class="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 20%"></div>
-                                </div>
-                            </div>
+                        <div class="text-center p-3 rounded-xl bg-white/5 border border-white/5">
+                            <div class="adaptive-text-xs text-slate-400 mb-1">Risiko</div>
+                            <div id="riskLevel" class="adaptive-text-base font-bold text-slate-400">-</div>
                         </div>
                     </div>
-                
-                    <!-- Detail Perhitungan (Collapsible) -->
-                    <details class="group">
-                        <summary class="flex items-center justify-between cursor-pointer list-none p-2 -m-2 rounded-lg hover:bg-white/5 transition-colors">
-                            <span class="text-[10px] uppercase tracking-wider text-slate-500 flex items-center gap-1">
-                                <i data-lucide="calculator" class="w-3 h-3"></i>
-                                Detail Perhitungan
-                            </span>
-                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-500 transition-transform group-open:rotate-180"></i>
-                        </summary>
-                        <div class="mt-3 space-y-2 pt-2">
-                            <div class="flex justify-between items-center py-1.5 border-b border-white/5">
-                                <span class="text-xs text-slate-400 flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                                    Saldo Saat Ini
-                                </span>
-                                <span class="text-sm font-mono text-white" id="detailCurrentBalance">E£ 0</span>
-                            </div>
-                            <div class="flex justify-between items-center py-1.5 border-b border-white/5">
-                                <span class="text-xs text-slate-400 flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                    Rata-rata Pengeluaran/Hari
-                                </span>
-                                <span class="text-sm font-mono text-amber-400" id="detailAvgExpense">E£ 0</span>
-                            </div>
-                            <div class="flex justify-between items-center py-1.5 border-b border-white/5">
-                                <span class="text-xs text-slate-400 flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
-                                    Sisa Hari Bulan Ini
-                                </span>
-                                <span class="text-sm font-mono text-white" id="detailDaysLeft">0 hari</span>
-                            </div>
-                            <div class="flex justify-between items-center py-1.5 border-b border-white/5">
-                                <span class="text-xs text-slate-400 flex items-center gap-1">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                    Proyeksi Pengeluaran
-                                </span>
-                                <span class="text-sm font-mono text-rose-400" id="detailProjectedExpense">E£ 0</span>
-                            </div>
-                            <div class="flex justify-between items-center py-2 bg-white/5 -mx-2 px-2 rounded-lg mt-2">
-                                <span class="text-xs font-medium text-white">Hasil Proyeksi</span>
-                                <span class="text-base font-bold text-white font-mono" id="detailProjectedBalance">E£ 0</span>
-                            </div>
-                        </div>
-                    </details>
                 </section>
 
                 <!-- Aksi Cepat -->
@@ -2854,99 +2768,26 @@
             updateForecast() {
                 const now = new Date();
                 const daysLeft = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate();
+                const forecast = NeuralEngine.forecastEndOfMonth(this.data, daysLeft, this.settings);
                 
-                // Get current month transactions
-                const currentMonth = this.data.filter(t => {
-                    const d = new Date(t.date);
-                    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                });
+                const dual = NeuralEngine.getDualDisplay(forecast.projectedBalance, this.settings);
                 
-                const daysPassed = Math.max(now.getDate(), 1);
-                const totalExpenseThisMonth = currentMonth
-                    .filter(t => t.type === 'expense' && !t.isTransfer)
-                    .reduce((sum, t) => sum + t.amountInBase, 0);
+                document.getElementById('forecastBalance').textContent = dual.primary.formatted;
+                document.getElementById('forecastBalanceSecondary').textContent = dual.secondary.formatted;
                 
-                const dailyAvgExpense = totalExpenseThisMonth / daysPassed;
-                const projectedExpense = dailyAvgExpense * daysLeft;
-                
-                const currentBalance = this.data
-                    .filter(t => !t.isTransfer)
-                    .reduce((sum, t) => sum + (t.type === 'income' ? t.amountInBase : -t.amountInBase), 0);
-                
-                const projectedBalance = currentBalance - projectedExpense;
-                
-                // Format values
-                const dualProjected = NeuralEngine.getDualDisplay(projectedBalance, this.settings);
-                const dualCurrent = NeuralEngine.getDualDisplay(currentBalance, this.settings);
-                const dualAvg = NeuralEngine.getDualDisplay(dailyAvgExpense, this.settings);
-                const dualProjectedExpense = NeuralEngine.getDualDisplay(projectedExpense, this.settings);
-                
-                // Update main displays
-                document.getElementById('forecastBalance').textContent = dualProjected.primary.formatted;
-                document.getElementById('forecastBalanceSecondary').textContent = dualProjected.secondary.formatted;
-                
-                // Update summary
-                document.getElementById('avgDailyDisplay').textContent = dualAvg.primary.formatted;
-                document.getElementById('daysLeftDisplay').textContent = daysLeft;
-                
-                // Update detail section
-                document.getElementById('detailCurrentBalance').textContent = dualCurrent.primary.formatted;
-                document.getElementById('detailAvgExpense').textContent = dualAvg.primary.formatted;
-                document.getElementById('detailDaysLeft').textContent = daysLeft + ' hari';
-                document.getElementById('detailProjectedExpense').textContent = dualProjectedExpense.primary.formatted;
-                document.getElementById('detailProjectedBalance').textContent = dualProjected.primary.formatted;
-                
-                // Update trend
-                const trendIndicator = document.getElementById('trendIndicator');
-                const trendText = document.getElementById('forecastTrendText');
-                
-                if (projectedBalance > 0) {
-                    trendIndicator.className = 'w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center';
-                    trendIndicator.innerHTML = '<i data-lucide="trending-up" class="w-4 h-4 text-emerald-400"></i>';
-                    trendText.textContent = 'Positif';
-                    trendText.className = 'text-sm font-medium text-emerald-400';
-                } else if (projectedBalance < 0) {
-                    trendIndicator.className = 'w-8 h-8 rounded-full bg-rose-500/20 flex items-center justify-center';
-                    trendIndicator.innerHTML = '<i data-lucide="trending-down" class="w-4 h-4 text-rose-400"></i>';
-                    trendText.textContent = 'Negatif';
-                    trendText.className = 'text-sm font-medium text-rose-400';
+                const trendEl = document.getElementById('forecastTrend');
+                if (forecast.projectedBalance > 0) {
+                    trendEl.innerHTML = '<i data-lucide="trending-up" class="w-4 h-4"></i><span>Positif</span>';
+                    trendEl.className = 'adaptive-text-base font-bold text-emerald-400 flex items-center justify-center gap-1';
                 } else {
-                    trendIndicator.className = 'w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center';
-                    trendIndicator.innerHTML = '<i data-lucide="minus" class="w-4 h-4 text-amber-400"></i>';
-                    trendText.textContent = 'Netral';
-                    trendText.className = 'text-sm font-medium text-amber-400';
+                    trendEl.innerHTML = '<i data-lucide="trending-down" class="w-4 h-4"></i><span>Negatif</span>';
+                    trendEl.className = 'adaptive-text-base font-bold text-rose-400 flex items-center justify-center gap-1';
                 }
                 
-                // Update risk
-                const riskLevel = dailyAvgExpense > 500000 ? 'high' : dailyAvgExpense > 200000 ? 'medium' : 'low';
-                const riskBadge = document.getElementById('riskLevelBadge');
-                const riskBar = document.getElementById('riskProgressBar');
-                
-                if (riskLevel === 'low') {
-                    riskBadge.textContent = 'RENDAH';
-                    riskBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-400';
-                    riskBar.style.width = '20%';
-                    riskBar.className = 'h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full transition-all duration-500';
-                } else if (riskLevel === 'medium') {
-                    riskBadge.textContent = 'SEDANG';
-                    riskBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-400';
-                    riskBar.style.width = '50%';
-                    riskBar.className = 'h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-500';
-                } else {
-                    riskBadge.textContent = 'TINGGI';
-                    riskBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-500/20 text-rose-400';
-                    riskBar.style.width = '85%';
-                    riskBar.className = 'h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-500';
-                }
-                
-                // Update summary text
-                const summaryEl = document.getElementById('forecastSummary');
-                if (totalExpenseThisMonth === 0) {
-                    summaryEl.innerHTML = `📊 Belum ada data pengeluaran bulan ini. Mulai catat transaksi untuk melihat proyeksi.`;
-                } else {
-                    summaryEl.innerHTML = `Berdasarkan pengeluaran <span class="text-white font-medium">${dualAvg.primary.formatted}</span>/hari, 
-                    sisa <span class="text-white font-medium">${daysLeft}</span> hari diproyeksikan.`;
-                }
+                const riskEl = document.getElementById('riskLevel');
+                const riskText = forecast.risk === 'low' ? 'Rendah' : forecast.risk === 'medium' ? 'Sedang' : 'Tinggi';
+                riskEl.textContent = riskText;
+                riskEl.className = 'adaptive-text-base font-bold ' + (forecast.risk === 'low' ? 'text-emerald-400' : forecast.risk === 'medium' ? 'text-amber-400' : 'text-rose-400');
                 
                 lucide.createIcons();
             },
