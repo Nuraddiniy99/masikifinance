@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MAS EA tracker</title>
+    <meta name="description" content="Buku jurnal harian profit & loss">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://i.ibb.co/yc1bCkCC/1784251001360.png">
+   
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --bg-deep: #0a0f1d;
+            --bg-surface: #0f172a;
+            --primary-glow: rgba(14, 165, 233, 0.5); 
+            --emerald: #10b981;
+            --emerald-glow: rgba(16, 185, 129, 0.25);
+            --crimson: #f43f5e;
+            --crimson-glow: rgba(244, 63, 94, 0.25);
+            --gold: #fbbf24;
+            --gold-glow: rgba(251, 191, 36, 0.3);
+            --gray-muted: #475569;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --nav-height: 70px;
+            --border-radius-lg: 24px;
+            --border-radius-md: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; }
+
+        body { background-color: var(--bg-deep); color: var(--text-main); overflow-x: hidden; display: flex; justify-content: center; }
+
+        #app-container {
+            width: 100%; max-width: 480px; min-height: 100vh;
+            background: radial-gradient(circle at top right, #1a233a, var(--bg-deep));
+            position: relative; padding-bottom: calc(var(--nav-height) + 20px);
+            box-shadow: 0 0 50px rgba(0,0,0,0.5); overflow-x: hidden;
+        }
+
+        header {
+            padding: 24px 20px; display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 10;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            background: rgba(10, 15, 29, 0.7); border-bottom: 1px solid var(--glass-border);
+        }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand img { width: 40px; height: 40px; border-radius: 12px; object-fit: cover; border: 1px solid var(--gold); box-shadow: 0 0 15px var(--gold-glow); }
+        .brand-text h1 { font-size: 18px; font-weight: 700; background: linear-gradient(90deg, #fff, var(--gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .brand-text p { font-size: 12px; color: var(--text-muted); letter-spacing: 1px; }
+
+        .view-section { display: none; padding: 20px; animation: fadeIn 0.4s ease forwards; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .glass-card {
+            background: var(--glass-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border); border-radius: var(--border-radius-lg);
+            padding: 20px; margin-bottom: 16px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-stats { text-align: center; padding: 30px 20px; position: relative; overflow: hidden; }
+        .hero-stats::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, var(--primary-glow) 0%, transparent 60%); opacity: 0.15; z-index: 0; animation: pulseBg 8s infinite alternate;
+        }
+        @keyframes pulseBg { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+        .hero-stats > div { position: relative; z-index: 1; }
+        .hero-title { font-size: 14px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px;}
+        .hero-value { font-size: 48px; font-weight: 800; color: var(--emerald); text-shadow: 0 0 20px var(--emerald-glow); margin: 10px 0;}
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 30px; font-size: 12px; font-weight: 600; background: var(--glass-bg); border: 1px solid var(--glass-border); }
+
+        .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .kpi-card { padding: 16px; border-radius: var(--border-radius-md); text-align: left; }
+        .kpi-card i { font-size: 24px; margin-bottom: 8px; color: var(--gold); }
+        .kpi-label { font-size: 12px; color: var(--text-muted); }
+        .kpi-val { font-size: 20px; font-weight: 700; margin-top: 4px; }
+
+        .log-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 16px;
+            border-radius: var(--border-radius-md); margin-bottom: 12px; background: var(--glass-bg);
+            border-left: 4px solid transparent; transition: all 0.3s ease; position: relative; cursor: pointer;
+        }
+        .log-item.profit { border-left-color: var(--emerald); background: linear-gradient(90deg, var(--emerald-glow) 0%, transparent 100%); }
+        .log-item.loss { border-left-color: var(--crimson); background: linear-gradient(90deg, var(--crimson-glow) 0%, transparent 100%); }
+        .log-item.bep { border-left-color: var(--gray-muted); background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, transparent 100%); }
+        
+        .log-date { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+        .log-equity { font-size: 18px; font-weight: 700; }
+        .log-base { font-size: 10px; color: var(--text-muted); opacity: 0.8; margin-top: 2px;}
+        .log-action { text-align: right; }
+        .log-action-title { font-size: 11px; text-transform: uppercase; letter-spacing: 1px;}
+        .log-action-value { font-size: 16px; font-weight: 700; margin-top: 2px;}
+        .profit .log-action-value { color: var(--emerald); }
+        .loss .log-action-value { color: var(--crimson); }
+        .bep .log-action-value { color: var(--text-muted); }
+
+        .chart-wrapper { position: relative; height: 260px; width: 100%; margin-top: 10px; }
+
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .calendar-header button { background: var(--glass-bg); border: 1px solid var(--glass-border); color: white; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; transition: 0.3s; }
+        .calendar-header button:active { transform: scale(0.9); background: var(--gold-glow); }
+        .calendar-header span { font-weight: 700; font-size: 18px; color: var(--gold); }
+        
+        .calendar-days-label { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+        
+        .cal-day {
+            aspect-ratio: 1; border-radius: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); font-size: 13px; font-weight: 600; position: relative;
+        }
+        .cal-day.empty { visibility: hidden; }
+        .cal-day.profit { background: var(--emerald-glow); border-color: var(--emerald); color: var(--emerald); box-shadow: 0 0 10px rgba(16,185,129,0.2); }
+        .cal-day.loss { background: var(--crimson-glow); border-color: var(--crimson); color: var(--crimson); }
+        .cal-day.bep { background: rgba(255,255,255,0.1); border-color: var(--text-muted); color: var(--text-main); }
+        
+        .cal-val { font-size: 8px; font-weight: 700; margin-top: 2px; }
+        
+        .monthly-report { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--glass-border); }
+        .monthly-report-item { text-align: center; flex: 1; }
+        .monthly-report-item .lbl { font-size: 11px; color: var(--text-muted); margin-bottom: 4px;}
+        .monthly-report-item .val { font-size: 16px; font-weight: 700; color: var(--text-main);}
+
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: white;
+            padding: 14px 16px; border-radius: 12px; font-size: 16px; outline: none; transition: all 0.3s;
+        }
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
+        .input-group textarea { resize: vertical; }
+        
+        .btn {
+            width: 100%; padding: 16px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--gold), #d97706); color: #000; box-shadow: 0 4px 15px var(--gold-glow); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-outline { background: transparent; border: 1px solid var(--glass-border); color: var(--text-main); }
+        .btn-danger { background: rgba(244, 63, 94, 0.1); border: 1px solid var(--crimson); color: var(--crimson); }
+
+        .fab {
+            position: fixed; bottom: calc(var(--nav-height) + 20px); right: 20px; width: 60px; height: 60px; border-radius: 30px;
+            background: linear-gradient(135deg, var(--gold), #d97706); color: #000; font-size: 28px;
+            display: flex; justify-content: center; align-items: center; box-shadow: 0 10px 25px var(--gold-glow); cursor: pointer; z-index: 100; transition: transform 0.3s;
+        }
+        .fab:hover, .fab:active { transform: scale(1.1) rotate(90deg); }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; width: 100%; max-width: 480px; height: var(--nav-height);
+            background: rgba(10, 15, 29, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border); display: flex; justify-content: space-around; align-items: center; z-index: 90;
+        }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--text-muted); font-size: 11px; cursor: pointer; transition: all 0.3s; flex: 1; padding: 10px 0; }
+        .nav-item i { font-size: 24px; transition: all 0.3s; }
+        .nav-item.active { color: var(--gold); }
+        .nav-item.active i { transform: translateY(-4px); filter: drop-shadow(0 0 8px var(--gold-glow)); }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 200; display: none; justify-content: center; align-items: flex-end; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show { display: flex; opacity: 1; }
+        .modal-content {
+            background: var(--bg-surface); border-top: 1px solid var(--glass-border); width: 100%; max-width: 480px;
+            border-radius: 30px 30px 0 0; padding: 30px 24px; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto;
+        }
+        .modal-overlay.show .modal-content { transform: translateY(0); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        .close-modal { font-size: 24px; color: var(--text-muted); cursor: pointer; }
+
+        #detailModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            z-index: 300; display: none; justify-content: center; align-items: center; padding: 20px;
+        }
+        #detailModal.show { display: flex; }
+        #detailModal .modal-inner {
+            background: var(--bg-surface); border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg); width: 100%; max-width: 450px;
+            overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s ease;
+        }
+        #detailModal .modal-inner .p-6 { padding: 24px; }
+        #detailModal .modal-inner .border-b { border-bottom: 1px solid var(--glass-border); }
+        #detailModal .modal-inner .border-t { border-top: 1px solid var(--glass-border); }
+        #detailModal .modal-inner .bg-slate-950\/50 { background: rgba(0,0,0,0.3); }
+        #detailModal .modal-inner .flex { display: flex; }
+        #detailModal .modal-inner .justify-between { justify-content: space-between; }
+        #detailModal .modal-inner .items-center { align-items: center; }
+        #detailModal .modal-inner .gap-3 { gap: 12px; }
+        #detailModal .modal-inner .space-y-4 > * + * { margin-top: 16px; }
+        #detailModal .modal-inner .mr-auto { margin-right: auto; }
+        #detailModal .modal-inner .text-lg { font-size: 18px; }
+        #detailModal .modal-inner .text-sm { font-size: 14px; }
+        #detailModal .modal-inner .text-xs { font-size: 12px; }
+        #detailModal .modal-inner .font-semibold { font-weight: 600; }
+        #detailModal .modal-inner .font-medium { font-weight: 500; }
+        #detailModal .modal-inner .text-white { color: #fff; }
+        #detailModal .modal-inner .text-slate-400 { color: #94a3b8; }
+        #detailModal .modal-inner .text-slate-300 { color: #cbd5e1; }
+        #detailModal .modal-inner .text-red-400 { color: #f87171; }
+        #detailModal .modal-inner .bg-slate-800 { background: #1e293b; }
+        #detailModal .modal-inner .bg-slate-900 { background: #0f172a; }
+        #detailModal .modal-inner .bg-red-600\/20 { background: rgba(220,38,38,0.2); }
+        #detailModal .modal-inner .bg-indigo-600 { background: #4f46e5; }
+        #detailModal .modal-inner .border-slate-700 { border-color: #334155; }
+        #detailModal .modal-inner .border-slate-800 { border-color: #1e293b; }
+        #detailModal .modal-inner .rounded-lg { border-radius: 8px; }
+        #detailModal .modal-inner .rounded-2xl { border-radius: 16px; }
+        #detailModal .modal-inner .px-3 { padding-left: 12px; padding-right: 12px; }
+        #detailModal .modal-inner .px-4 { padding-left: 16px; padding-right: 16px; }
+        #detailModal .modal-inner .py-2 { padding-top: 8px; padding-bottom: 8px; }
+        #detailModal .modal-inner .w-full { width: 100%; }
+        #detailModal .modal-inner .hover\:bg-slate-700:hover { background: #334155; }
+        #detailModal .modal-inner .hover\:bg-red-600:hover { background: #dc2626; }
+        #detailModal .modal-inner .hover\:bg-indigo-500:hover { background: #6366f1; }
+        #detailModal .modal-inner .hover\:text-white:hover { color: #fff; }
+        #detailModal .modal-inner .transition { transition: all 0.2s; }
+        #detailModal .modal-inner .shadow-lg { box-shadow: 0 10px 15px rgba(0,0,0,0.3); }
+        #detailModal .modal-inner .focus\:outline-none:focus { outline: none; }
+        #detailModal .modal-inner .focus\:border-indigo-500:focus { border-color: #6366f1; }
+
+        .text-green { color: var(--emerald) !important; }
+        .text-red { color: var(--crimson) !important; }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 48px; opacity: 0.5; margin-bottom: 16px; }
+
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <header>
+        <div class="brand">
+            <img src="https://i.ibb.co/yc1bCkCC/1784251001360.png" alt="Logo MAS EA">
+            <div class="brand-text">
+                <h1>MAS EA tracker</h1>
+                <p>Buku jurnal harian profit & loss</p>
+            </div>
+        </div>
+        <i class="ph ph-bell" style="font-size: 24px; color: var(--gold);"></i>
+    </header>
+
+    <main id="view-dashboard" class="view-section active">
+        <div class="glass-card hero-stats">
+            <div>
+                <div class="hero-title">Total Keuntungan Bersih</div>
+                <div class="hero-value" id="kpi-total-withdraw">$0.00</div>
+                <div class="status-badge" id="kpi-status">
+                    <i class="ph-fill ph-check-circle"></i> Memuat...
+                </div>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="glass-card kpi-card">
+                <i class="ph-fill ph-target"></i>
+                <div class="kpi-label">Modal Acuan (Saat Ini)</div>
+                <div class="kpi-val" id="kpi-base-capital">$100.00</div>
+            </div>
+            <div class="glass-card kpi-card">
+                <i class="ph-fill ph-trend-down text-red"></i>
+                <div class="kpi-label">Max Drawdown</div>
+                <div class="kpi-val text-red" id="kpi-max-dd">$0.00</div>
+            </div>
+            <div class="glass-card kpi-card">
+                <i class="ph-fill ph-chart-line-up text-green"></i>
+                <div class="kpi-label">Win Rate (Hari)</div>
+                <div class="kpi-val" id="kpi-winrate">0%</div>
+            </div>
+            <div class="glass-card kpi-card">
+                <i class="ph-fill ph-calendar-check"></i>
+                <div class="kpi-label">Total Hari Trading</div>
+                <div class="kpi-val" id="kpi-total-days">0 Hari</div>
+            </div>
+        </div>
+        
+        <h3 style="margin: 24px 0 16px; font-size: 16px;">Aktivitas Terakhir</h3>
+        <div id="dashboard-recent-logs"></div>
+    </main>
+
+    <main id="view-logs" class="view-section">
+        <h2 style="margin-bottom: 20px;">Jurnal Harian</h2>
+        <div id="logs-container"></div>
+    </main>
+
+    <main id="view-analytics" class="view-section">
+        <h2 style="margin-bottom: 20px;">Analitik Performa</h2>
+        
+        <div class="glass-card">
+            <div class="calendar-header">
+                <button onclick="App.changeCalendarMonth(-1)"><i class="ph ph-caret-left"></i></button>
+                <span id="cal-month-year">Juli 2026</span>
+                <button onclick="App.changeCalendarMonth(1)"><i class="ph ph-caret-right"></i></button>
+            </div>
+            
+            <div class="calendar-days-label">
+                <div>Min</div><div>Sen</div><div>Sel</div><div>Rab</div><div>Kam</div><div>Jum</div><div>Sab</div>
+            </div>
+            
+            <div class="calendar-grid" id="calendar-grid"></div>
+
+            <div class="monthly-report">
+                <div class="monthly-report-item">
+                    <div class="lbl">Profit Bersih Bulan Ini</div>
+                    <div class="val text-green" id="cal-monthly-profit">$0.00</div>
+                </div>
+                <div class="monthly-report-item" style="border-left: 1px solid var(--glass-border);">
+                    <div class="lbl">Drawdown Bulan Ini</div>
+                    <div class="val text-red" id="cal-monthly-dd">-$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card" style="padding: 15px;">
+            <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">Grafik Akumulasi Profit (All Time)</h3>
+            <div class="chart-wrapper">
+                <canvas id="profitChart"></canvas>
+            </div>
+        </div>
+
+        <div class="glass-card" style="padding: 15px; margin-top: 20px;">
+            <h3 style="font-size: 14px; margin-bottom: 10px; color: var(--text-muted);">Grafik Equity Harian</h3>
+            <div class="chart-wrapper">
+                <canvas id="equityChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <main id="view-settings" class="view-section">
+        <h2 style="margin-bottom: 20px;">Sistem & Vault</h2>
+        
+        <div class="glass-card">
+            <h3 style="font-size: 16px; margin-bottom: 16px;">Pengaturan Modal Global</h3>
+            <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 16px;">Mengubah modal acuan di sini HANYA akan berlaku untuk entri data baru ke depannya. Data historis di masa lalu tidak akan berubah.</p>
+            <div class="input-group">
+                <label>Default Modal Acuan Baru (USD)</label>
+                <input type="number" id="setting-base-capital" step="0.01">
+            </div>
+            <button class="btn btn-primary" onclick="App.saveSettings()">Simpan Pengaturan</button>
+        </div>
+
+        <div class="glass-card">
+            <h3 style="font-size: 16px; margin-bottom: 16px;">Manajemen Data (JSON)</h3>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <button class="btn btn-outline" onclick="App.exportData()">
+                    <i class="ph ph-export"></i> Export Data Backup
+                </button>
+                <button class="btn btn-outline" onclick="document.getElementById('import-file').click()">
+                    <i class="ph ph-import"></i> Import Data
+                </button>
+                <input type="file" id="import-file" style="display: none;" accept=".json" onchange="App.importData(event)">
+            </div>
+        </div>
+
+        <div class="glass-card" style="border-color: var(--crimson-glow);">
+            <h3 style="font-size: 16px; margin-bottom: 16px; color: var(--crimson);">Danger Zone</h3>
+            <button class="btn btn-danger" onclick="App.confirmClearData()">
+                <i class="ph ph-trash"></i> Hapus Seluruh Data
+            </button>
+        </div>
+    </main>
+
+    <div class="fab" onclick="App.openEntryModal()">
+        <i class="ph ph-plus"></i>
+    </div>
+
+    <nav class="bottom-nav">
+        <div class="nav-item active" onclick="App.switchTab('dashboard', this)">
+            <i class="ph-fill ph-squares-four"></i>
+            <span>Dashboard</span>
+        </div>
+        <div class="nav-item" onclick="App.switchTab('logs', this)">
+            <i class="ph-fill ph-book-open-text"></i>
+            <span>Jurnal</span>
+        </div>
+        <div class="nav-item" onclick="App.switchTab('analytics', this)">
+            <i class="ph-fill ph-chart-pie-slice"></i>
+            <span>Analitik</span>
+        </div>
+        <div class="nav-item" onclick="App.switchTab('settings', this)">
+            <i class="ph-fill ph-gear"></i>
+            <span>Sistem</span>
+        </div>
+    </nav>
+</div>
+
+<div class="modal-overlay" id="entry-modal">
+    <div class="modal-content glass-card">
+        <div class="modal-header">
+            <h2 style="font-size: 20px;">Input Jurnal Harian</h2>
+            <i class="ph ph-x close-modal" onclick="App.closeModals()"></i>
+        </div>
+        <div class="input-group">
+            <label>Tanggal Input</label>
+            <input type="date" id="input-date" required>
+        </div>
+        <div class="input-group">
+            <label>Modal Acuan Untuk Hari Ini (USD)</label>
+            <input type="number" id="input-base" step="0.01" required>
+            <span style="font-size: 11px; color: var(--gold); display: block; margin-top: 4px;">*Otomatis terisi dari setting, bisa diubah khusus hari ini.</span>
+        </div>
+        <div class="input-group" style="margin-top: 15px;">
+            <label>Saldo Berjalan / Equity (USD) Pukul 04:00</label>
+            <input type="number" id="input-equity" step="0.01" placeholder="Contoh: 105.50" required>
+        </div>
+        <button class="btn btn-primary" onclick="App.submitEntry()" style="margin-top: 10px;">
+            Simpan & Kalkulasi
+        </button>
+    </div>
+</div>
+
+<div id="detailModal">
+    <div class="modal-inner">
+        <div class="p-6 border-b flex justify-between items-center">
+            <h3 class="text-lg font-semibold text-white">Detail Transaksi</h3>
+            <button onclick="App.closeDetailModal()" class="text-slate-400 hover:text-white transition" style="font-size: 24px; background: none; border: none; cursor: pointer;">&times;</button>
+        </div>
+        
+        <div class="p-6 space-y-4">
+            <input type="hidden" id="editIndex">
+            <div class="input-group">
+                <label>Tanggal</label>
+                <input type="date" id="editTanggal">
+            </div>
+            <div class="input-group">
+                <label>Jenis Transaksi</label>
+                <select id="editJenis">
+                    <option value="profit">Profit</option>
+                    <option value="loss">Loss</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Nominal (USD)</label>
+                <input type="number" id="editNominal" step="0.01">
+            </div>
+            <div class="input-group">
+                <label>Keterangan / Catatan</label>
+                <textarea id="editKeterangan" rows="3" placeholder="Opsional..."></textarea>
+            </div>
+        </div>
+
+        <div class="p-6 bg-slate-950/50 border-t flex gap-3">
+            <button onclick="App.deleteJurnalData()" class="px-4 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg text-sm font-medium transition mr-auto">Hapus</button>
+            <button onclick="App.closeDetailModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition">Batal</button>
+            <button onclick="App.saveEditJurnal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium shadow-lg transition">Simpan Perubahan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const App = {
+        data: {
+            settings: { baseCapital: 100.00 },
+            logs: [] 
+        },
+        charts: {},
+        calendarDate: new Date(),
+
+        init() {
+            this.initPWA();
+            this.loadData();
+            document.getElementById('input-date').valueAsDate = new Date();
+            this.updateUI();
+        },
+
+        loadData() {
+            const savedData = localStorage.getItem('eaSuperappDataV2');
+            if (savedData) {
+                try {
+                    this.data = JSON.parse(savedData);
+                } catch (e) {
+                    console.error("Data corrupt...", e);
+                }
+            } else {
+                const legacyData = localStorage.getItem('eaSuperappData');
+                if(legacyData) {
+                    try {
+                        let parsed = JSON.parse(legacyData);
+                        parsed.logs = parsed.logs.map(l => {
+                            if(!l.baseCapital) l.baseCapital = parsed.settings.baseCapital;
+                            return l;
+                        });
+                        this.data = parsed;
+                        this.saveData();
+                    } catch(e){}
+                }
+            }
+            document.getElementById('setting-base-capital').value = this.data.settings.baseCapital;
+        },
+
+        saveData() {
+            localStorage.setItem('eaSuperappDataV2', JSON.stringify(this.data));
+            this.updateUI();
+        },
+
+        submitEntry() {
+            const dateVal = document.getElementById('input-date').value;
+            const baseUsed = parseFloat(document.getElementById('input-base').value);
+            const equityVal = parseFloat(document.getElementById('input-equity').value);
+            
+            if (!dateVal || isNaN(equityVal) || isNaN(baseUsed)) {
+                alert("Mohon lengkapi data numerik dengan benar.");
+                return;
+            }
+
+            let withdrawn = 0;
+            let deficit = 0;
+            let status = '';
+
+            if (equityVal > baseUsed) {
+                withdrawn = equityVal - baseUsed;
+                status = 'PROFIT';
+            } else if (equityVal < baseUsed) {
+                deficit = baseUsed - equityVal;
+                status = 'LOSS';
+            } else {
+                status = 'BEP';
+            }
+
+            const newEntry = {
+                id: Date.now(),
+                date: dateVal,
+                baseCapital: baseUsed,
+                equity: equityVal,
+                withdrawn: withdrawn,
+                deficit: deficit,
+                status: status,
+                keterangan: ''
+            };
+
+            const existingIndex = this.data.logs.findIndex(l => l.date === dateVal);
+            if (existingIndex > -1) {
+                if(confirm("Data untuk tanggal ini sudah ada. Timpa data lama?")) {
+                    this.data.logs[existingIndex] = newEntry;
+                } else return;
+            } else {
+                this.data.logs.push(newEntry);
+            }
+
+            this.data.logs.sort((a, b) => new Date(a.date) - new Date(b.date));
+            this.saveData();
+            this.closeModals();
+            document.getElementById('input-equity').value = '';
+            
+            if (status === 'PROFIT') alert(`PROFIT! Tarik $${withdrawn.toFixed(2)} sekarang. \nSistem mereset acuan ke $${baseUsed}.`);
+            else if (status === 'LOSS') alert(`LOSS/HOLD! Tidak ada penarikan. \nKurangan modal saat ini $${deficit.toFixed(2)}.`);
+            else alert("BREAK EVEN POINT. Tidak ada profit atau loss.");
+        },
+
+        updateUI() {
+            this.renderDashboard();
+            this.renderLogs();
+            if(document.getElementById('view-analytics').classList.contains('active')) {
+                this.renderAnalytics();
+            }
+        },
+
+        renderDashboard() {
+            const logs = this.data.logs;
+            let totalWithdrawn = 0;
+            let maxDrawdown = 0;
+            let winDays = 0;
+            
+            const currentGlobalBase = this.data.settings.baseCapital;
+
+            logs.forEach(log => {
+                totalWithdrawn += log.withdrawn;
+                if (log.deficit > maxDrawdown) maxDrawdown = log.deficit;
+                if (log.status === 'PROFIT') winDays++;
+            });
+
+            const winRate = logs.length > 0 ? ((winDays / logs.length) * 100).toFixed(1) : 0;
+            
+            document.getElementById('kpi-total-withdraw').innerText = `$${totalWithdrawn.toFixed(2)}`;
+            document.getElementById('kpi-base-capital').innerText = `$${currentGlobalBase}`;
+            document.getElementById('kpi-max-dd').innerText = `-$${maxDrawdown.toFixed(2)}`;
+            document.getElementById('kpi-winrate').innerText = `${winRate}%`;
+            document.getElementById('kpi-total-days').innerText = `${logs.length} Hari`;
+
+            const statusBadge = document.getElementById('kpi-status');
+            if (logs.length === 0) {
+                statusBadge.innerHTML = `<i class="ph-fill ph-info"></i> Menunggu Data`;
+                statusBadge.style.color = 'var(--text-muted)';
+                statusBadge.style.borderColor = 'var(--glass-border)';
+            } else {
+                const lastLog = logs[logs.length - 1];
+                if (lastLog.status === 'PROFIT' || lastLog.status === 'BEP') {
+                    statusBadge.innerHTML = `<i class="ph-fill ph-check-circle"></i> ALL CLEAR - PROFIT`;
+                    statusBadge.style.color = 'var(--emerald)';
+                    statusBadge.style.borderColor = 'var(--emerald)';
+                } else {
+                    statusBadge.innerHTML = `<i class="ph-fill ph-warning-circle"></i> RECOVERY MODE`;
+                    statusBadge.style.color = 'var(--crimson)';
+                    statusBadge.style.borderColor = 'var(--crimson)';
+                }
+            }
+
+            const recentContainer = document.getElementById('dashboard-recent-logs');
+            recentContainer.innerHTML = '';
+            const recentLogs = [...logs].reverse().slice(0, 3);
+            
+            if (recentLogs.length === 0) recentContainer.innerHTML = `<div class="empty-state">Belum ada aktivitas.</div>`;
+            else recentLogs.forEach(log => recentContainer.appendChild(this.createLogElement(log)));
+        },
+
+        renderLogs() {
+            const container = document.getElementById('logs-container');
+            container.innerHTML = '';
+            const allLogs = [...this.data.logs].reverse();
+            
+            if (allLogs.length === 0) {
+                container.innerHTML = `<div class="empty-state"><i class="ph ph-folder-open"></i><p>Jurnal kosong.</p></div>`;
+                return;
+            }
+            allLogs.forEach(log => container.appendChild(this.createLogElement(log)));
+        },
+
+        createLogElement(log) {
+            const div = document.createElement('div');
+            const index = this.data.logs.indexOf(log);
+            const statusClass = log.status.toLowerCase();
+            div.className = `log-item ${statusClass}`;
+            div.onclick = () => this.openDetailModal(index);
+            
+            const dateObj = new Date(log.date);
+            const dateStr = dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            
+            let actionVal = '$0.00';
+            let actionTitle = 'BEP';
+            if(log.status === 'PROFIT') { actionVal = '+$'+log.withdrawn.toFixed(2); actionTitle = 'WITHDRAW'; }
+            if(log.status === 'LOSS') { actionVal = '-$'+log.deficit.toFixed(2); actionTitle = 'DEFICIT'; }
+
+            div.innerHTML = `
+                <div>
+                    <div class="log-date">${dateStr}</div>
+                    <div class="log-equity">Eq: $${log.equity.toFixed(2)}</div>
+                    <div class="log-base">Acuan: $${(log.baseCapital || this.data.settings.baseCapital).toFixed(2)}</div>
+                </div>
+                <div class="log-action">
+                    <div class="log-action-title">${actionTitle}</div>
+                    <div class="log-action-value">${actionVal}</div>
+                </div>
+            `;
+            return div;
+        },
+        
+        openDetailModal(index) {
+            const log = this.data.logs[index];
+            if (!log) return;
+            
+            document.getElementById('editIndex').value = index;
+            document.getElementById('editTanggal').value = log.date;
+            document.getElementById('editJenis').value = log.status === 'PROFIT' ? 'profit' : 'loss';
+            document.getElementById('editNominal').value = log.status === 'PROFIT' ? log.withdrawn : log.deficit;
+            document.getElementById('editKeterangan').value = log.keterangan || '';
+            
+            document.getElementById('detailModal').classList.add('show');
+        },
+        
+        closeDetailModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        },
+        
+        saveEditJurnal() {
+            const index = parseInt(document.getElementById('editIndex').value);
+            if (isNaN(index) || index < 0 || index >= this.data.logs.length) return;
+            
+            const log = this.data.logs[index];
+            const nominal = parseFloat(document.getElementById('editNominal').value) || 0;
+            const jenis = document.getElementById('editJenis').value;
+            
+            log.date = document.getElementById('editTanggal').value;
+            log.keterangan = document.getElementById('editKeterangan').value;
+            log.baseCapital = log.baseCapital || this.data.settings.baseCapital;
+            
+            if(jenis === 'profit') {
+                log.withdrawn = nominal;
+                log.deficit = 0;
+                log.status = 'PROFIT';
+                log.equity = log.baseCapital + nominal;
+            } else {
+                log.withdrawn = 0;
+                log.deficit = nominal;
+                log.status = 'LOSS';
+                log.equity = log.baseCapital - nominal;
+            }
+            
+            this.data.logs.sort((a, b) => new Date(a.date) - new Date(b.date));
+            this.saveData();
+            this.closeDetailModal();
+        },
+        
+        deleteJurnalData() {
+            if (confirm('Hapus catatan ini?')) {
+                const index = parseInt(document.getElementById('editIndex').value);
+                if (!isNaN(index) && index >= 0 && index < this.data.logs.length) {
+                    this.data.logs.splice(index, 1);
+                    this.saveData();
+                }
+                this.closeDetailModal();
+            }
+        },
+
+        renderAnalytics() {
+            this.renderCalendar();
+            this.renderCharts();
+        },
+
+        changeCalendarMonth(direction) {
+            this.calendarDate.setMonth(this.calendarDate.getMonth() + direction);
+            this.renderCalendar();
+        },
+
+        renderCalendar() {
+            const year = this.calendarDate.getFullYear();
+            const month = this.calendarDate.getMonth();
+            
+            const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+            document.getElementById('cal-month-year').innerText = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            const grid = document.getElementById('calendar-grid');
+            grid.innerHTML = '';
+            
+            let monthlyProfit = 0;
+            let monthlyMaxDD = 0;
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div class="cal-day empty"></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const pad = n => n < 10 ? '0'+n : n;
+                const dateStr = `${year}-${pad(month+1)}-${pad(day)}`;
+                
+                const log = this.data.logs.find(l => l.date === dateStr);
+                
+                let elClass = 'cal-day';
+                let content = `${day}`;
+                let subContent = '';
+
+                if (log) {
+                    if (log.status === 'PROFIT') {
+                        elClass += ' profit';
+                        subContent = `+${log.withdrawn}`;
+                        monthlyProfit += log.withdrawn;
+                    } else if (log.status === 'LOSS') {
+                        elClass += ' loss';
+                        subContent = `-${log.deficit}`;
+                        if(log.deficit > monthlyMaxDD) monthlyMaxDD = log.deficit;
+                    } else {
+                        elClass += ' bep';
+                        subContent = `BEP`;
+                    }
+                    content = `${day}<div class="cal-val">${subContent}</div>`;
+                }
+
+                grid.innerHTML += `<div class="${elClass}">${content}</div>`;
+            }
+            
+            document.getElementById('cal-monthly-profit').innerText = `+$${monthlyProfit.toFixed(2)}`;
+            document.getElementById('cal-monthly-dd').innerText = `-$${monthlyMaxDD.toFixed(2)}`;
+        },
+
+        renderCharts() {
+            const logs = this.data.logs;
+            if (logs.length === 0) return;
+
+            const labels = logs.map(l => {
+                const d = new Date(l.date);
+                return `${d.getDate()}/${d.getMonth()+1}`;
+            });
+            
+            let cumulativeProfit = 0;
+            const accumProfitData = logs.map(l => {
+                cumulativeProfit += l.withdrawn;
+                return cumulativeProfit;
+            });
+
+            const equityData = logs.map(l => l.equity);
+
+            Chart.defaults.color = '#94a3b8';
+            Chart.defaults.font.family = "'Outfit', sans-serif";
+            
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: 5 },
+                plugins: { legend: { display: false } }
+            };
+
+            const ctxProfit = document.getElementById('profitChart').getContext('2d');
+            let gradP = ctxProfit.createLinearGradient(0, 0, 0, 250);
+            gradP.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
+            gradP.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+
+            if (this.charts.profit) this.charts.profit.destroy();
+            this.charts.profit = new Chart(ctxProfit, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: accumProfitData,
+                        borderColor: '#10b981', backgroundColor: gradP,
+                        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3
+                    }]
+                },
+                options: { ...commonOptions, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+            });
+
+            const ctxEquity = document.getElementById('equityChart').getContext('2d');
+            let gradE = ctxEquity.createLinearGradient(0, 0, 0, 250);
+            gradE.addColorStop(0, 'rgba(251, 191, 36, 0.5)');
+            gradE.addColorStop(1, 'rgba(251, 191, 36, 0.0)');
+
+            if (this.charts.equity) this.charts.equity.destroy();
+            this.charts.equity = new Chart(ctxEquity, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: equityData,
+                        borderColor: '#fbbf24', backgroundColor: gradE,
+                        borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3
+                    }]
+                },
+                options: { ...commonOptions, scales: { y: { grid: { color: 'rgba(255,255,255,0.05)' } }, x: { grid: { display: false } } } }
+            });
+        },
+
+        saveSettings() {
+            const newBase = parseFloat(document.getElementById('setting-base-capital').value);
+            if (isNaN(newBase) || newBase <= 0) {
+                alert("Nominal modal acuan tidak valid.");
+                return;
+            }
+            this.data.settings.baseCapital = newBase;
+            this.saveData();
+            alert("Modal Acuan Default berhasil diubah untuk entri selanjutnya.\nData riwayat sebelumnya tetap aman.");
+        },
+
+        exportData() {
+            const dataStr = JSON.stringify(this.data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportName = `EABackup_V2_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportName);
+            linkElement.click();
+        },
+
+        importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (importedData.settings && importedData.logs) {
+                        this.data = importedData;
+                        this.saveData();
+                        alert("Data berhasil di-import!");
+                    } else alert("Format JSON tidak sesuai.");
+                } catch (err) { alert("Gagal membaca file JSON."); }
+            };
+            reader.readAsText(file);
+        },
+
+        confirmClearData() {
+            if (confirm("PERINGATAN: Seluruh riwayat trading Anda akan dihapus permanen. Lanjutkan?")) {
+                this.data.logs = [];
+                this.saveData();
+                alert("Data berhasil dihapus.");
+            }
+        },
+
+        switchTab(tabId, navElement) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            if (navElement) navElement.classList.add('active');
+            
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            const targetView = document.getElementById(`view-${tabId}`);
+            if (targetView) targetView.classList.add('active');
+            
+            if (tabId === 'analytics') setTimeout(() => this.renderAnalytics(), 50);
+        },
+
+        openEntryModal() {
+            document.getElementById('input-date').valueAsDate = new Date();
+            document.getElementById('input-base').value = this.data.settings.baseCapital;
+            document.getElementById('input-equity').value = '';
+            
+            document.getElementById('entry-modal').classList.add('show');
+            setTimeout(() => document.getElementById('input-equity').focus(), 300);
+        },
+
+        closeModals() {
+            document.getElementById('entry-modal').classList.remove('show');
+        },
+        
+        initPWA() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('PWA Service Worker ready'))
+                .catch(err => console.log('PWA failed', err));
+            }
+        }
+    };
+
+    document.getElementById('entry-modal').addEventListener('click', function(e) {
+        if(e.target === this) App.closeModals();
+    });
+
+    document.getElementById('detailModal').addEventListener('click', function(e) {
+        if(e.target === this) App.closeDetailModal();
+    });
+
+    window.onload = () => App.init();
+</script>
+</body>
+  </html>
